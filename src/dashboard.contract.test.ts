@@ -141,6 +141,21 @@ describe('auth gate', () => {
     expect(res.status).not.toBe(403);
   });
 
+  it('allows same-origin POSTs when served from a LAN IP', async () => {
+    const res = await app.request('http://192.168.1.50:3141/api/mission/tasks?token=' + TOKEN, {
+      method: 'POST',
+      headers: {
+        'host': '192.168.1.50:3141',
+        'origin': 'http://192.168.1.50:3141',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ title: 'lan csrf test', prompt: 'lan csrf test' }),
+    });
+    // Anything but 403 means the CSRF middleware recognized the request
+    // as same-origin for the LAN host and let the route handler decide.
+    expect(res.status).not.toBe(403);
+  });
+
   it('blocks POSTs from disallowed origin', async () => {
     const res = await app.request('/api/mission/tasks?token=' + TOKEN, {
       method: 'POST',
