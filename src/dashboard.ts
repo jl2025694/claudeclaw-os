@@ -5,7 +5,7 @@ import { serve } from '@hono/node-server';
 
 import fs from 'fs';
 import path from 'path';
-import { AGENT_ID, ALLOWED_CHAT_ID, DASHBOARD_PORT, DASHBOARD_TOKEN, DASHBOARD_URL, PROJECT_ROOT, STORE_DIR, WHATSAPP_ENABLED, SLACK_USER_TOKEN, CONTEXT_LIMIT, agentDefaultModel, CLAUDECLAW_CONFIG } from './config.js';
+import { AGENT_ID, ALLOWED_CHAT_ID, DASHBOARD_PORT, DASHBOARD_TOKEN, DASHBOARD_URL, DASHBOARD_BIND, PROJECT_ROOT, STORE_DIR, WHATSAPP_ENABLED, SLACK_USER_TOKEN, CONTEXT_LIMIT, agentDefaultModel, CLAUDECLAW_CONFIG } from './config.js';
 import crypto from 'crypto';
 import {
   getAllScheduledTasks,
@@ -348,6 +348,11 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
     if (!raw) return '';
     try { return new URL(raw).hostname; } catch { return ''; }
   })();
+  function requestHost(c: any): string {
+    const raw = c.req.header('host') || '';
+    if (!raw) return '';
+    try { return new URL(`http://${raw}`).hostname; } catch { return raw.split(':')[0] || ''; }
+  }
   app.use('*', async (c, next) => {
     const method = c.req.method;
     if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
@@ -363,6 +368,7 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
         host === '127.0.0.1' ||
         host === '[::1]' ||
         host === '0.0.0.0' ||
+        (!!host && host === requestHost(c)) ||
         (!!allowedOriginHost && host === allowedOriginHost);
       if (!allowed) {
         logger.warn({ origin, method, path: new URL(c.req.url).pathname }, 'CSRF: rejected cross-origin request');
@@ -1013,7 +1019,7 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
     return { ok: false, error: 'chat_mismatch', status: 403 };
   }
 
-  app.post('/api/warroom/text/send', async (c) => {
+  app.post('/api/warroom/text/msg', async (c) => {
     let body: { meetingId?: string; text?: string; clientMsgId?: string; chatId?: string } = {};
     try { body = await c.req.json(); } catch { /* empty */ }
     const meetingId = (body.meetingId || '').trim();
@@ -2995,7 +3001,7 @@ export function startDashboard(botApi?: Api<RawApi>): void {
   // dashboard-token leak away from full mutation access. Operators who
   // want Cloudflare-tunneled or LAN access opt in via DASHBOARD_BIND in
   // .env (e.g. `DASHBOARD_BIND=0.0.0.0`).
-  const bindHost = (process.env.DASHBOARD_BIND || '127.0.0.1').trim() || '127.0.0.1';
+  const bindHost = (DASHBOARD_BIND || '127.0.0.1').trim() || '127.0.0.1';
   if (bindHost !== '127.0.0.1' && bindHost !== 'localhost') {
     logger.warn(
       { bindHost, port: DASHBOARD_PORT },

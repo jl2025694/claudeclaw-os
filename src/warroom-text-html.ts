@@ -58,6 +58,7 @@ export function getWarRoomTextHtml(token: string, chatId: string, meetingId: str
     color: var(--text);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     height: 100vh;
+    height: 100dvh;
     overflow: hidden;
   }
   .app {
@@ -65,6 +66,7 @@ export function getWarRoomTextHtml(token: string, chatId: string, meetingId: str
     grid-template-columns: 240px 1fr;
     grid-template-rows: 56px 1fr;
     height: 100vh;
+    height: 100dvh;
   }
   .header {
     grid-column: 1 / -1;
@@ -1044,7 +1046,7 @@ export function getWarRoomTextHtml(token: string, chatId: string, meetingId: str
       <div class="actions">
         <button type="button" class="commands-btn" id="btn-commands" aria-haspopup="listbox" aria-controls="slash-popup" aria-expanded="false" title="Show slash commands">/ Commands</button>
         <button type="button" class="stop" id="btn-stop" aria-label="Stop current turn">Stop</button>
-        <button type="submit" class="send" id="btn-send" disabled>Send</button>
+        <button type="button" class="send" id="btn-send">Send</button>
       </div>
     </form>
   </main>
@@ -2712,7 +2714,6 @@ function closeMentionPopup() {
 }
 
 composerEl.addEventListener('input', () => {
-  sendBtn.disabled = composerEl.value.trim().length === 0;
   // Auto-grow
   composerEl.style.height = 'auto';
   composerEl.style.height = Math.min(180, composerEl.scrollHeight) + 'px';
@@ -2774,7 +2775,7 @@ composerEl.addEventListener('keydown', (e) => {
   }
   if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
     e.preventDefault();
-    formEl.requestSubmit();
+    handleSend();
   } else if (e.key === 'Escape' && turnInFlight) {
     e.preventDefault();
     abortTurn();
@@ -2797,8 +2798,7 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-formEl.addEventListener('submit', (e) => {
-  e.preventDefault();
+function handleSend() {
   const raw = composerEl.value;
   const trimmed = raw.trim();
   if (!trimmed) return;
@@ -2810,15 +2810,34 @@ formEl.addEventListener('submit', (e) => {
   sendMessage(trimmed);
   composerEl.value = '';
   composerEl.dispatchEvent(new Event('input'));
-});
+}
+
+sendBtn.addEventListener('click', handleSend);
+formEl.addEventListener('submit', (e) => { e.preventDefault(); handleSend(); });
 
 stopBtn.addEventListener('click', () => abortTurn());
 
+function makeClientMsgId() {
+  if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+    return window.crypto.randomUUID();
+  }
+  const bytes = new Uint8Array(16);
+  if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+    window.crypto.getRandomValues(bytes);
+  } else {
+    for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+  }
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
+}
+
 async function sendMessage(text, existingClientMsgId) {
-  const clientMsgId = existingClientMsgId || crypto.randomUUID();
+  const clientMsgId = existingClientMsgId || makeClientMsgId();
   if (!existingClientMsgId) appendUserBubble(text, { clientMsgId });
   try {
-    const res = await fetch(API + '/api/warroom/text/send' + Q, {
+    const res = await fetch(API + '/api/warroom/text/msg' + Q, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ meetingId: MEETING_ID, text, clientMsgId, chatId: CHAT_ID }),
