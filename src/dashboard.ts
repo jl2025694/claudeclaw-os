@@ -68,7 +68,7 @@ import {
 import { computeNextRun } from './scheduler.js';
 import { generateContent, parseJsonResponse } from './gemini.js';
 import { getSecurityStatus } from './security.js';
-import { AGENT_ID_RE, agentExists, listAgentIds, loadAgentConfig, resolveAgentDir, setAgentModel } from './agent-config.js';
+import { AGENT_ID_RE, agentExists, formatAgentDisplayName, listAgentIds, loadAgentConfig, resolveAgentDir, setAgentModel } from './agent-config.js';
 import {
   resolveAgentAvatar,
   avatarEtag,
@@ -648,11 +648,11 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
     const ids = ['main', ...listAgentIds().filter((id) => id !== 'main')];
     const agents = ids.map((id) => {
       try {
-        if (id === 'main') return { id: 'main', name: 'Main', description: 'General ops and triage' };
+        if (id === 'main') return { id: 'main', name: formatAgentDisplayName('main'), description: 'General ops and triage' };
         const cfg = loadAgentConfig(id);
-        return { id, name: cfg.name || id, description: cfg.description || '' };
+        return { id, name: formatAgentDisplayName(id, cfg.name || id), description: cfg.description || '' };
       } catch {
-        return { id, name: id, description: '' };
+        return { id, name: formatAgentDisplayName(id), description: '' };
       }
     });
     return c.json({ agents });
@@ -1857,7 +1857,7 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
     const chatId = c.req.query('chatId') || '';
     const info = getBotInfo();
     return c.json({
-      botName: info.name || 'ClaudeClaw',
+      botName: info.name || 'Straxis',
       botUsername: info.username || '',
       pid: process.pid,
       chatId: chatId || null,
@@ -1885,7 +1885,7 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
         const mainOverride = id === 'main' ? getMainModelOverride() : undefined;
         return {
           id,
-          name: config.name,
+          name: formatAgentDisplayName(id, config.name),
           description: config.description,
           model: mainOverride ?? config.model ?? 'claude-opus-4-6',
           running,
@@ -1897,7 +1897,7 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
           avatar_etag: avatarEtagForId(id),
         };
       } catch {
-        return { id, name: id, description: '', model: 'unknown', running: false, todayTurns: 0, todayCost: 0, avatar_etag: avatarEtagForId(id) };
+        return { id, name: formatAgentDisplayName(id), description: '', model: 'unknown', running: false, todayTurns: 0, todayCost: 0, avatar_etag: avatarEtagForId(id) };
       }
     });
 
@@ -1912,7 +1912,7 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
     }
     const mainStats = getAgentTokenStats('main');
     const allAgents = [
-      { id: 'main', name: 'Main', description: 'Primary ClaudeClaw bot', model: getMainModelOverride() ?? 'claude-opus-4-6', running: mainRunning, todayTurns: mainStats.todayTurns, todayCost: mainStats.todayCost, avatar_etag: avatarEtagForId('main') },
+      { id: 'main', name: formatAgentDisplayName('main'), description: 'Primary Straxis bot', model: getMainModelOverride() ?? 'claude-opus-4-6', running: mainRunning, todayTurns: mainStats.todayTurns, todayCost: mainStats.todayCost, avatar_etag: avatarEtagForId('main') },
       ...agents,
     ];
 
@@ -2333,7 +2333,7 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
       if (id !== 'main') {
         try { description = loadAgentConfig(id).description || ''; } catch { /* skip */ }
       } else {
-        description = 'Primary ClaudeClaw bot — general triage and routing';
+        description = 'Primary Straxis bot — general triage and routing';
       }
       const entries = getHiveMindEntries(200, id);
       const allFiltered = entries
@@ -2921,9 +2921,21 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
   // Send message from dashboard
   app.post('/api/chat/send', async (c) => {
     if (!botApi) return c.json({ error: 'Bot API not available' }, 503);
-    const body = await c.req.json<{ message?: string }>();
+    const body = await c.req.json<{ message?: string; agentId?: string }>();
     const message = body?.message?.trim();
     if (!message) return c.json({ error: 'message required' }, 400);
+
+    const requestedAgent = body?.agentId?.trim();
+    if (requestedAgent && requestedAgent !== 'all' && requestedAgent !== 'main') {
+      const validAgents = listAgentIds();
+      if (!validAgents.includes(requestedAgent)) {
+        return c.json({ error: `Unknown agent: ${requestedAgent}` }, 400);
+      }
+      const title = message.length > 60 ? message.slice(0, 57) + '...' : message;
+      const id = crypto.randomBytes(4).toString('hex');
+      createMissionTask(id, title, message, requestedAgent, 'dashboard', 5);
+      return c.json({ ok: true, queued: true, id, assigned_agent: requestedAgent });
+    }
 
     // Reject if a turn is already in flight. Without this guard, rapid
     // clicks (or a scripted token holder) can stack N agent invocations,

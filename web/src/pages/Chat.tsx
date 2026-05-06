@@ -131,6 +131,25 @@ export function Chat() {
     if (!message) return;
     setSending(true); setError(null);
     try {
+      if (activeAgent !== 'all') {
+        const res = await apiPost<{ ok?: boolean; id?: string; error?: string }>('/api/chat/send', { message, agentId: activeAgent });
+        if (!res.ok && res.error) {
+          setError(res.error);
+        } else {
+          setTurns((prev) => [
+            ...prev,
+            { role: 'user', content: message, source: 'dashboard' },
+            {
+              role: 'assistant',
+              content: `Queued for @${activeAgent}. The agent will reply on Telegram when the mission finishes.`,
+              source: 'dashboard',
+            },
+          ]);
+          if (!textOverride) setDraft('');
+        }
+        return;
+      }
+
       const res = await apiPost<{ ok?: boolean; error?: string }>('/api/chat/send', { message });
       if (!res.ok && res.error) {
         setError(res.error === 'busy' ? 'A turn is already in flight. Wait for it to finish.' : res.error);

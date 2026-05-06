@@ -435,8 +435,8 @@ function CreateAgentWizard({ open, onClose, onCreated, prefill }: CreateAgentWiz
 
   const idValid = !!debouncedId && idCheck.data?.ok === true;
   const tokenValid = tokenStatus?.ok === true;
-  const suggestedBotName = `ClaudeClaw ${name || 'Agent'}`;
-  const suggestedBotUsername = `claudeclaw_${id || 'agent'}_bot`;
+  const suggestedBotName = `Straxis ${name || 'Agent'}`;
+  const suggestedBotUsername = `straxis_${id || 'agent'}_bot`;
 
   async function create() {
     setCreating(true); setError(null);
@@ -689,4 +689,3 @@ function CopyButton({ text }: { text: string }) {
     </button>
   );
 }
-

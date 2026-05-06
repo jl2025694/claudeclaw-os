@@ -1,6 +1,6 @@
 """
 AgentRouter: a Pipecat FrameProcessor that inspects transcribed speech
-and decides which ClaudeClaw agent should handle the message.
+and decides which Straxis agent should handle the message.
 
 Routing rules (in priority order):
   1. Broadcast triggers: "everyone, status update" -> round-robin all agents

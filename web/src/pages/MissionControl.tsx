@@ -94,7 +94,7 @@ export function MissionControl() {
   const loading = (tasks.loading || agents.loading) && !tasks.data;
   const error = tasks.error || agents.error;
   const wsName = workspaceName.value;
-  const headerTitle = wsName && wsName !== 'ClaudeClaw' ? `${wsName} · Tasks` : 'Mission Control';
+  const headerTitle = wsName && wsName !== 'Straxis' ? `${wsName} · Tasks` : 'Mission Control';
 
   // Apply user-saved column order on top of API agent order. Any agents
   // not in the saved order keep their API position; saved agents that no

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { X, Search, RotateCw, Sparkles, ChevronDown, ChevronRight, SlidersHorizontal } from 'lucide-preact';
 import { formatRelativeTime } from '@/lib/format';
+import { agentHandle } from '@/lib/agents';
 
 interface HiveEntry {
   id: number;
@@ -507,7 +508,7 @@ export function BrainGraph({ entries, agentFilter, agentColors, blurOn }: Props)
                 style={{ backgroundColor: agentColors[hoveredEntry.agent_id] || 'var(--color-text-muted)' }}
               />
               <span class="font-mono text-[10.5px] text-[var(--color-text-muted)]">
-                @{hoveredEntry.agent_id} · {hoveredEntry.action}
+                {agentHandle(hoveredEntry.agent_id)} · {hoveredEntry.action}
               </span>
               <span class="text-[10px] text-[var(--color-text-faint)] ml-auto tabular-nums">
                 {formatRelativeTime(hoveredEntry.created_at)}
@@ -588,7 +589,7 @@ function DetailPanel({
     <>
       <header class="flex items-center px-4 py-3 border-b border-[var(--color-border)] gap-2">
         <span class="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-        <span class="font-mono text-[12px] text-[var(--color-text)]">@{entry.agent_id}</span>
+        <span class="font-mono text-[12px] text-[var(--color-text)]">{agentHandle(entry.agent_id)}</span>
         {lobeLabel && (
           <span class="text-[10px] uppercase tracking-wider text-[var(--color-text-faint)] ml-1">{lobeLabel}</span>
         )}
@@ -721,7 +722,7 @@ function FilterPanel({
                     style={{ backgroundColor: color, boxShadow: on ? `0 0 6px ${color}` : 'none' }}
                   />
                   <span class={'font-mono text-[11.5px] ' + (on ? 'text-[var(--color-text)]' : 'text-[var(--color-text-faint)]')}>
-                    @{id}
+                    {agentHandle(id)}
                   </span>
                   {lobe && (
                     <span class="text-[10px]" style={{ color: on ? lobe.color : 'var(--color-text-faint)', opacity: on ? 0.75 : 0.4 }}>

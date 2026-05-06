@@ -9,6 +9,7 @@ import { useFetch } from '@/lib/useFetch';
 import { formatRelativeTime } from '@/lib/format';
 import { privacyBlur } from '@/lib/privacy';
 import { hasWebGL } from '@/lib/webgl';
+import { agentDisplayName } from '@/lib/agents';
 
 // Lazy-load 3D so the ~150KB three.js bundle only ships when the user
 // flips to the 3D view. Default 2D path stays cheap.
@@ -52,7 +53,7 @@ export function HiveMind() {
   const [filter, setFilter] = useState<string>('all');
   const [view, setView] = useState<ViewMode>(loadView());
   const [revealed, setRevealed] = useState<Set<number>>(new Set());
-  const agentList = useFetch<{ agents: { id: string }[] }>('/api/agents');
+  const agentList = useFetch<{ agents: { id: string; name?: string }[] }>('/api/agents');
   const path = filter === 'all'
     ? '/api/hive-mind?limit=200'
     : `/api/hive-mind?agent=${encodeURIComponent(filter)}&limit=200`;
@@ -94,7 +95,7 @@ export function HiveMind() {
           <>
             <Tab label="All" active={filter === 'all'} onClick={() => setFilter('all')} />
             {allAgents.map((id) => (
-              <Tab key={id} label={id} active={filter === id} onClick={() => setFilter(id)} />
+              <Tab key={id} label={agentList.data?.agents?.find((a) => a.id === id)?.name || agentDisplayName(id)} active={filter === id} onClick={() => setFilter(id)} />
             ))}
           </>
         }
@@ -158,7 +159,7 @@ export function HiveMind() {
                   <td class="px-3 py-2">
                     <span class="inline-flex items-center gap-1.5" style={{ color: AGENT_HUE[e.agent_id] || 'var(--color-text-muted)' }}>
                       <span class="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'currentColor' }} />
-                      {e.agent_id}
+                      {agentList.data?.agents?.find((a) => a.id === e.agent_id)?.name || agentDisplayName(e.agent_id)}
                     </span>
                   </td>
                   <td class="px-3 py-2 font-mono text-[11px] text-[var(--color-text-muted)]">{e.action}</td>

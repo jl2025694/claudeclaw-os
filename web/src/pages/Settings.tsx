@@ -79,7 +79,7 @@ export function Settings() {
             subtitle="Identity for this dashboard. Stored in the database so it shows up in any browser pointed at this server."
           >
             <Card>
-              <Row label="Name" hint="Up to 32 characters. Empty resets to ClaudeClaw.">
+              <Row label="Name" hint="Up to 32 characters. Empty resets to Straxis.">
                 <WorkspaceNameField />
               </Row>
               <Divider />
@@ -189,7 +189,7 @@ function WorkspaceNameField() {
         value={value}
         onInput={onInput}
         maxLength={32}
-        placeholder="ClaudeClaw"
+        placeholder="Straxis"
         class="bg-[var(--color-elevated)] border border-[var(--color-border)] rounded px-2.5 py-1.5 text-[13px] text-[var(--color-text)] outline-none focus:border-[var(--color-accent)] w-[200px]"
       />
       {savedTick && <Check size={14} class="text-[var(--color-status-done)] shrink-0" />}

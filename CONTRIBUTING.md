@@ -1,4 +1,4 @@
-# Contributing to ClaudeClaw
+# Contributing to Straxis
 
 ## Adding a migration
 

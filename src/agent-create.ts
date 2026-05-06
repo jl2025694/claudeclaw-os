@@ -57,7 +57,7 @@ If a marker doesn't appear to send and the user asks why, say so plainly — DO 
 
 If the user asks you to "set this as your profile picture" or "make this your avatar," **you cannot do this via any API or skill.** The Telegram Bot API has no \`setMyProfilePhoto\` method. The avatar Telegram users see for your bot can ONLY be changed by:
 
-1. **The dashboard's per-agent avatar uploader** (Agents tab → click your card → camera icon on the avatar). That sets the avatar shown inside ClaudeClaw (sidebar, mission control, war room) — NOT the one on Telegram.
+1. **The dashboard's per-agent avatar uploader** (Agents tab → click your card → camera icon on the avatar). That sets the avatar shown inside Straxis (sidebar, mission control, war room) — NOT the one on Telegram.
 2. **@BotFather → /setuserpic** in Telegram, by the bot owner. This is the only way to change what Telegram shows.
 
 When asked, **respond with that explanation** and mention the file path of the image you generated so the user can re-use it for the @BotFather step. **Do not**:
@@ -466,7 +466,7 @@ function generateSystemdUnit(agentId: string): string {
   const nodePath = process.execPath;
 
   const unit = `[Unit]
-Description=ClaudeClaw Agent: ${agentId}
+Description=Straxis Agent: ${agentId}
 After=network.target
 
 [Service]
@@ -728,8 +728,8 @@ export function deleteAgent(agentId: string): { ok: boolean; error?: string } {
 export function suggestBotNames(agentId: string): { displayName: string; username: string } {
   const label = agentId.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   return {
-    displayName: `ClaudeClaw ${label}`,
-    username: `claudeclaw_${agentId.replace(/-/g, '_')}_bot`,
+    displayName: `Straxis ${label}`,
+    username: `straxis_${agentId.replace(/-/g, '_')}_bot`,
   };
 }
 

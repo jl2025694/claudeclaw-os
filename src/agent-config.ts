@@ -58,6 +58,35 @@ export interface AgentConfig {
   meetBotName?: string;
 }
 
+const DEFAULT_AGENT_NAMES: Record<string, string> = {
+  main: 'Ivonne',
+  ops: 'Taylor',
+  comms: 'Charlie',
+  content: 'Jennifer',
+  research: 'Laura',
+};
+
+const DEFAULT_AGENT_ROLES: Record<string, string> = {
+  main: 'Main',
+  ops: 'ops',
+  comms: 'comms',
+  content: 'content',
+  research: 'research',
+};
+
+export function agentDisplayName(agentId: string, name?: string): string {
+  const baseName = (name || DEFAULT_AGENT_NAMES[agentId] || agentId).trim();
+  return baseName.replace(/\s+-\s+[a-z0-9_-]+$/i, '');
+}
+
+export function agentRole(agentId: string): string {
+  return DEFAULT_AGENT_ROLES[agentId] || agentId;
+}
+
+export function formatAgentDisplayName(agentId: string, name?: string): string {
+  return agentDisplayName(agentId, name);
+}
+
 /**
  * Resolve the directory for a given agent, checking CLAUDECLAW_CONFIG first,
  * then falling back to PROJECT_ROOT/agents/<id>.
@@ -188,7 +217,7 @@ export function getAgentCapabilities(
 ): { name: string; description: string } | null {
   try {
     const config = loadAgentConfig(agentId);
-    return { name: config.name, description: config.description };
+    return { name: agentDisplayName(agentId, config.name), description: config.description };
   } catch {
     return null;
   }
@@ -218,7 +247,7 @@ export function listAllAgents(): Array<{
       const config = loadAgentConfig(id);
       result.push({
         id,
-        name: config.name,
+        name: agentDisplayName(id, config.name),
         description: config.description,
         model: config.model,
       });
@@ -246,11 +275,11 @@ export function refreshWarRoomRoster(): void {
     const ids = ['main', ...listAgentIds().filter((id) => id !== 'main')];
     const roster = ids.map((id) => {
       try {
-        if (id === 'main') return { id: 'main', name: 'Main', description: 'General ops and triage' };
+        if (id === 'main') return { id: 'main', name: agentDisplayName('main'), role: agentRole('main'), description: 'General ops and triage' };
         const cfg = loadAgentConfig(id);
-        return { id, name: cfg.name || id, description: cfg.description || '' };
+        return { id, name: agentDisplayName(id, cfg.name || id), role: agentRole(id), description: cfg.description || '' };
       } catch {
-        return { id, name: id, description: '' };
+        return { id, name: agentDisplayName(id), role: agentRole(id), description: '' };
       }
     });
     fs.writeFileSync(WARROOM_ROSTER_PATH, JSON.stringify(roster, null, 2));

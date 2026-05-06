@@ -41,7 +41,7 @@ function printWindowsHandoff(what: string, err?: string, file?: string): void {
   console.log(`  ${c.bold}4.${c.reset} Paste this prompt:`);
   console.log();
   console.log(`  ${c.gray}─────────────────────────────────────────────${c.reset}`);
-  console.log(`  ${c.white}I'm running ClaudeClaw on Windows. ${what} failed.${c.reset}`);
+  console.log(`  ${c.white}I'm running Straxis on Windows. ${what} failed.${c.reset}`);
   if (err) console.log(`  ${c.white}The error was: ${err}${c.reset}`);
   if (file) console.log(`  ${c.white}Start by reading ${file} and adapt it to my machine.${c.reset}`);
   else console.log(`  ${c.white}Adapt the Windows paths in this repo to work on my machine.${c.reset}`);
@@ -60,7 +60,7 @@ function loadBanner(): string {
   try {
     return fs.readFileSync(path.join(PROJECT_ROOT, 'banner.txt'), 'utf-8');
   } catch {
-    return '\n  ClaudeClaw\n';
+    return '\n  Straxis\n';
   }
 }
 
@@ -184,17 +184,17 @@ async function main() {
 
   // ── 1. Banner + intro ────────────────────────────────────────────────────
   console.log(`${c.cyan}${c.bold}${loadBanner()}${c.reset}`);
-  console.log(`  ${c.bold}Welcome to ClaudeClaw.${c.reset}`);
+  console.log(`  ${c.bold}Welcome to Straxis.${c.reset}`);
   console.log();
   info('This wizard will get you set up in about 5 minutes.');
   info('Press Ctrl+C at any time to exit. You can re-run this at any time with: npm run setup');
   console.log();
 
-  // ── 2. What is ClaudeClaw ────────────────────────────────────────────────
-  section('What is ClaudeClaw?');
+  // ── 2. What is Straxis ────────────────────────────────────────────────
+  section('What is Straxis?');
 
-  console.log(`  ClaudeClaw bridges your Claude Code CLI to Telegram.`);
-  console.log(`  You message your bot from your phone. ClaudeClaw runs the`);
+  console.log(`  Straxis bridges your Claude Code CLI to Telegram.`);
+  console.log(`  You message your bot from your phone. Straxis runs the`);
   console.log(`  ${c.bold}actual${c.reset} ${c.cyan}claude${c.reset} CLI on your computer — with all your skills,`);
   console.log(`  tools, and context — and sends the result back to you.`);
   console.log();
@@ -212,12 +212,12 @@ async function main() {
   console.log(`  ${c.bold}FAQ${c.reset}`);
   console.log();
   console.log(`  ${c.cyan}Q:${c.reset} Does this cost anything?`);
-  info('ClaudeClaw itself is free. You need a Claude Code subscription (Max plan)');
+  info('Straxis itself is free. You need a Claude Code subscription (Max plan)');
   info('or an Anthropic API key. Optional features (voice, video) have their own');
   info('free tiers. Nothing is billed without your API keys.');
   console.log();
   console.log(`  ${c.cyan}Q:${c.reset} Does my computer need to stay on?`);
-  info('Yes. ClaudeClaw runs on your machine. When your computer sleeps or shuts');
+  info('Yes. Straxis runs on your machine. When your computer sleeps or shuts');
   info('down, the bot goes offline. Messages queue in Telegram and arrive when');
   info('you restart.');
   console.log();
@@ -255,7 +255,7 @@ async function main() {
       info('  1. Open PowerShell as Administrator');
       console.log(`  ${c.cyan}  wsl --install -d Ubuntu${c.reset}`);
       info('  2. Reboot, open the Ubuntu terminal');
-      info('  3. Re-clone ClaudeClaw inside the Ubuntu filesystem (NOT /mnt/c)');
+      info('  3. Re-clone Straxis inside the Ubuntu filesystem (NOT /mnt/c)');
       info('  4. Run "npm run setup" from the new clone');
       process.exit(0);
     }
@@ -355,7 +355,7 @@ async function main() {
   // ── 4. What do you want to enable? ──────────────────────────────────────
   section('Choose your features');
 
-  info('ClaudeClaw OS has several optional features. Tell us what you want.');
+  info('Straxis OS has several optional features. Tell us what you want.');
   info('You can always add more later by editing .env and restarting.');
   console.log();
 
@@ -372,7 +372,7 @@ async function main() {
     console.log();
     console.log(`  ${c.bold}How the WhatsApp bridge works:${c.reset}`);
     console.log();
-    info('ClaudeClaw uses whatsapp-web.js to connect to your existing WhatsApp');
+    info('Straxis uses whatsapp-web.js to connect to your existing WhatsApp');
     info('account via the Linked Devices feature (same as WhatsApp Web).');
     console.log();
     info('A separate process (wa-daemon) runs in the background:');
@@ -600,7 +600,7 @@ async function main() {
   // ── 7. Skills to install ─────────────────────────────────────────────────
   section('Skills you might want');
 
-  info('ClaudeClaw auto-loads every skill in ~/.claude/skills/.');
+  info('Straxis auto-loads every skill in ~/.claude/skills/.');
   info('Here are the most useful ones to install:');
   console.log();
 
@@ -615,7 +615,7 @@ async function main() {
   if (wantVideo) {
     console.log(`  ${c.bold}Gemini skill (required for video analysis):${c.reset}`);
     console.log();
-    info('ClaudeClaw\'s video analysis uses the gemini-api-dev skill from Google.');
+    info('Straxis\'s video analysis uses the gemini-api-dev skill from Google.');
     info('It handles text, images, audio, video, function calling, and structured output.');
     info('Install it from: https://github.com/google-gemini/gemini-skills');
     console.log();
@@ -723,7 +723,7 @@ async function main() {
   // ── 9. Security ──────────────────────────────────────────────────────────
   section('Secure your bot');
 
-  info('ClaudeClaw has full access to your machine. If someone gets into');
+  info('Straxis has full access to your machine. If someone gets into');
   info('your Telegram account, they control the bot. These layers protect you.');
   console.log();
 
@@ -855,7 +855,7 @@ async function main() {
   // ── 11. Optional Claude API key ───────────────────────────────────────────
   section('Claude authentication');
 
-  info('By default, ClaudeClaw uses your existing claude login (Max plan).');
+  info('By default, Straxis uses your existing claude login (Max plan).');
   info('This is fine for personal use on your own machine.');
   console.log();
   info('Set an API key if you\'re deploying on a server, or want pay-per-token');
@@ -875,7 +875,7 @@ async function main() {
   await sleep(300);
 
   const lines = [
-    '# ClaudeClaw — generated by setup wizard',
+    '# Straxis — generated by setup wizard',
     '# Edit freely. Re-run: npm run setup',
     '',
     '# ── Required ──────────────────────────────────────────────────',
@@ -971,7 +971,7 @@ async function main() {
   // ── 15. Multi-agent setup (optional) ────────────────────────────────────
   section('Agent team (optional)');
 
-  info('ClaudeClaw can run specialist agents alongside the main bot.');
+  info('Straxis can run specialist agents alongside the main bot.');
   info('Each agent is its own Telegram bot with a focused role, its own');
   info('context window, and its own chat on your phone.');
   console.log();
@@ -1161,7 +1161,7 @@ async function main() {
   // ── 16. Summary ───────────────────────────────────────────────────────────
   console.log();
   console.log(`  ${c.cyan}╔════════════════════════════════════════════╗${c.reset}`);
-  console.log(`  ${c.cyan}║${c.reset}${c.bold}           ClaudeClaw is ready!             ${c.reset}${c.cyan}║${c.reset}`);
+  console.log(`  ${c.cyan}║${c.reset}${c.bold}           Straxis is ready!             ${c.reset}${c.cyan}║${c.reset}`);
   console.log(`  ${c.cyan}╚════════════════════════════════════════════╝${c.reset}`);
   console.log();
 
@@ -1191,7 +1191,7 @@ async function main() {
     } else {
       ok('Build complete');
       console.log();
-      info('Starting ClaudeClaw... (press Ctrl+C to stop)');
+      info('Starting Straxis... (press Ctrl+C to stop)');
       console.log();
       // Close readline before handing off to the bot process
       rl.close();
@@ -1290,7 +1290,7 @@ async function setupLinux() {
     const serviceDir = path.join(os.homedir(), '.config', 'systemd', 'user');
     const servicePath = path.join(serviceDir, 'claudeclaw.service');
     const service = `[Unit]
-Description=ClaudeClaw Telegram Bot
+Description=Straxis Telegram Bot
 After=network.target
 
 [Service]
@@ -1328,7 +1328,7 @@ async function setupWindows() {
   console.log();
   info('A: WSL2 (recommended if you haven\'t started yet).');
   info('  Run "wsl --install -d Ubuntu" in an elevated PowerShell, reboot,');
-  info('  clone ClaudeClaw inside the Ubuntu filesystem (not /mnt/c), and');
+  info('  clone Straxis inside the Ubuntu filesystem (not /mnt/c), and');
   info('  re-run this setup from inside WSL2. Keep ~/.claude/ inside WSL2.');
   console.log();
   info('B: Native Windows (Task Scheduler).');
@@ -1356,7 +1356,7 @@ async function setupWindows() {
 
     const q = (v: string) => `"${v.replace(/"/g, '""')}"`;
     const bat = `@echo off\r
-REM ClaudeClaw main bot wrapper\r
+REM Straxis main bot wrapper\r
 set NODE_ENV=production\r
 cd /d ${q(PROJECT_ROOT)}\r
 if not exist ${q(logsDir)} mkdir ${q(logsDir)}\r
@@ -1387,7 +1387,7 @@ ${q(process.execPath)} ${q(entry)} >> ${q(logFile)} 2>&1\r
   } catch (err) {
     s.stop('warn', 'Could not register scheduled task automatically');
     const errMsg = err instanceof Error ? err.message : String(err);
-    printWindowsHandoff('Installing the ClaudeClaw auto-start scheduled task', errMsg, 'scripts/setup.ts (setupWindows function)');
+    printWindowsHandoff('Installing the Straxis auto-start scheduled task', errMsg, 'scripts/setup.ts (setupWindows function)');
     info('Quick manual fallback if you prefer: start with "npm start" in a terminal,');
     info('or use PM2:');
     console.log(`  ${c.cyan}npm install -g pm2${c.reset}`);

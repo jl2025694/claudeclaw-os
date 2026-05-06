@@ -28,6 +28,7 @@ export interface WaMessage {
 }
 
 let client: InstanceType<typeof Client> | null = null;
+const WA_DAEMON_BASE = 'http://127.0.0.1:4242';
 
 export async function initWhatsApp(onIncoming: OnIncomingMessage): Promise<void> {
   const sessionPath = path.join(STORE_DIR, 'waweb');
@@ -82,7 +83,10 @@ export async function initWhatsApp(onIncoming: OnIncomingMessage): Promise<void>
 }
 
 export async function getWaChats(limit = 5): Promise<WaChat[]> {
-  if (!client) throw new Error('WhatsApp not connected');
+  if (!client) {
+    const data = await daemonGet<{ chats: WaChat[] }>(`/chats?limit=${encodeURIComponent(String(limit))}`);
+    return data.chats;
+  }
   const chats = await client.getChats();
   return chats
     .filter((c) => c.lastMessage)
@@ -98,7 +102,11 @@ export async function getWaChats(limit = 5): Promise<WaChat[]> {
 }
 
 export async function getWaChatMessages(chatId: string, limit = 10): Promise<WaMessage[]> {
-  if (!client) throw new Error('WhatsApp not connected');
+  if (!client) {
+    const params = new URLSearchParams({ chatId, limit: String(limit) });
+    const data = await daemonGet<{ messages: WaMessage[] }>(`/messages?${params.toString()}`);
+    return data.messages;
+  }
   const chat = await client.getChatById(chatId);
   const messages = await chat.fetchMessages({ limit });
   return messages.map((msg) => ({
@@ -111,13 +119,33 @@ export async function getWaChatMessages(chatId: string, limit = 10): Promise<WaM
 }
 
 export async function sendWhatsAppMessage(chatId: string, text: string): Promise<void> {
-  if (!client) throw new Error('WhatsApp client not initialized');
+  if (!client) {
+    await daemonPost('/send', { chatId, text });
+    saveWaMessage(chatId, 'You', text, Math.floor(Date.now() / 1000), true);
+    return;
+  }
   await client.sendMessage(chatId, text);
   saveWaMessage(chatId, 'You', text, Math.floor(Date.now() / 1000), true);
 }
 
 export function isWhatsAppReady(): boolean {
   return client !== null;
+}
+
+async function daemonGet<T>(path: string): Promise<T> {
+  const res = await fetch(WA_DAEMON_BASE + path);
+  if (!res.ok) throw new Error(`WhatsApp daemon GET ${path} failed: ${res.status} ${await res.text()}`);
+  return await res.json() as T;
+}
+
+async function daemonPost<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(WA_DAEMON_BASE + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`WhatsApp daemon POST ${path} failed: ${res.status} ${await res.text()}`);
+  return await res.json() as T;
 }
 
 function startOutboxPoller(): void {

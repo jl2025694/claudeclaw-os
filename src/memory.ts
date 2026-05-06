@@ -231,7 +231,7 @@ export async function buildMemoryContext(
     parts.push(`[War room earlier — most recent last]\n${warRoomLines.join('\n')}\n[End war room]`);
   }
 
-  const obsidianBlock = buildObsidianContext(agentObsidianConfig);
+  const obsidianBlock = buildObsidianContext(agentObsidianConfig, userMessage);
   if (obsidianBlock) parts.push(obsidianBlock);
 
   return { contextText: parts.join('\n\n'), surfacedMemoryIds: [...seen], surfacedMemorySummaries: summaryMap };

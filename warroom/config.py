@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 def get_project_root() -> Path:
-    """Resolve the ClaudeClaw project root via git or file path fallback."""
+    """Resolve the Straxis project root via git or file path fallback."""
     try:
         result = subprocess.run(
             ["git", "rev-parse", "--show-toplevel"],

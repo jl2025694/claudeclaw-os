@@ -433,9 +433,9 @@ async def cleanup_meeting(session_id: str | None) -> None:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="ClaudeClaw Daily.co voice agent")
+    parser = argparse.ArgumentParser(description="Straxis Daily.co voice agent")
     parser.add_argument("--room-url", required=True, help="Full Daily room URL")
-    parser.add_argument("--agent", default="main", help="Which ClaudeClaw agent persona to use")
+    parser.add_argument("--agent", default="main", help="Which Straxis agent persona to use")
     parser.add_argument("--mode", default="direct", choices=["direct", "auto"])
     parser.add_argument("--token", default=None, help="Optional Daily meeting token")
     parser.add_argument("--bot-name", default=None, help="Display name in the Daily UI")

@@ -1,13 +1,13 @@
-# War Room - ClaudeClaw Voice Meeting Server
+# War Room - Straxis Voice Meeting Server
 
-Real-time voice conversations with ClaudeClaw's AI agents. Each agent has a distinct voice. You speak, the right agent responds.
+Real-time voice conversations with Straxis's AI agents. Each agent has a distinct voice. You speak, the right agent responds.
 
 ## Prerequisites
 
 - Python 3.10+
 - A Google AI API key (for Gemini Live native audio)
 - A Daily.co account (only required for the `meet` video-meeting flow; the local voice WebSocket transport doesn't need it)
-- The ClaudeClaw Node.js project built (`npm run build`)
+- The Straxis Node.js project built (`npm run build`)
 
 ## Setup
 

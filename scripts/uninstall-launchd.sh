@@ -1,10 +1,10 @@
 #!/bin/bash
-# Uninstall all ClaudeClaw launchd agents
+# Uninstall all Straxis launchd agents
 set -e
 
 LAUNCH_AGENTS_DIR="$HOME/Library/LaunchAgents"
 
-echo "Uninstalling ClaudeClaw launchd agents..."
+echo "Uninstalling Straxis launchd agents..."
 echo ""
 
 for plist in "$LAUNCH_AGENTS_DIR"/com.claudeclaw.*.plist; do
@@ -17,5 +17,5 @@ for plist in "$LAUNCH_AGENTS_DIR"/com.claudeclaw.*.plist; do
 done
 
 echo ""
-echo "All ClaudeClaw agents uninstalled."
+echo "All Straxis agents uninstalled."
 echo "Processes will stop within a few seconds."

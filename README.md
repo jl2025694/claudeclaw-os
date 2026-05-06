@@ -1,4 +1,4 @@
-# ClaudeClaw
+# Straxis
 
 ```
  ██████╗██╗      █████╗ ██╗   ██╗██████╗ ███████╗
@@ -18,9 +18,9 @@
 
 > Your Claude Code CLI, delivered to your phone via Telegram.
 
-ClaudeClaw is not a chatbot wrapper. It spawns the actual `claude` CLI on your Mac, Linux, or Windows machine and pipes the result back to your Telegram chat. Everything that works in your terminal (your skills, your tools, your context) works from your phone.
+Straxis is not a chatbot wrapper. It spawns the actual `claude` CLI on your Mac, Linux, or Windows machine and pipes the result back to your Telegram chat. Everything that works in your terminal (your skills, your tools, your context) works from your phone.
 
-![ClaudeClaw at a glance](assets/claudeclaw-overview.png)
+![Straxis at a glance](assets/claudeclaw-overview.png)
 
 Eight surfaces, one bot, one machine. Telegram for chat, the dashboard for everything else, war room for live multi-agent conversation (text or voice), Mission Control for queued work, Scheduled for recurring runs, Hive Mind to see what every agent has been doing. Everything is local: SQLite database, Node bot, optional dashboard. No cloud, no telemetry, no per-message API calls beyond the model itself.
 
@@ -28,7 +28,7 @@ Eight surfaces, one bot, one machine. Telegram for chat, the dashboard for every
 
 ## What You Get
 
-ClaudeClaw has two tiers of features. The **core** features work out of the box with just a Telegram bot token. The **experimental** features are opt-in and require additional setup.
+Straxis has two tiers of features. The **core** features work out of the box with just a Telegram bot token. The **experimental** features are opt-in and require additional setup.
 
 ### Core Features (zero to hero in 5 minutes)
 
@@ -72,7 +72,7 @@ These are powerful but require extra API keys or services. Each one has its own 
 
 ## Get Started
 
-![ClaudeClaw setup flow](assets/setup-flow.jpeg)
+![Straxis setup flow](assets/setup-flow.jpeg)
 
 Follow these steps in order. The whole thing takes about 5 minutes.
 
@@ -95,9 +95,9 @@ git config --global user.email "you@example.com"
 ```
 Without this, git operations will fail with a confusing error about missing identity.
 
-**macOS users:** After starting ClaudeClaw for the first time, your Mac may show "Node wants to access..." permission dialogs. You need to click Allow on each one or the bot will silently hang. Keep an eye on your Mac screen during the first run.
+**macOS users:** After starting Straxis for the first time, your Mac may show "Node wants to access..." permission dialogs. You need to click Allow on each one or the bot will silently hang. Keep an eye on your Mac screen during the first run.
 
-**Which Claude plan works best?** ClaudeClaw runs the `claude` CLI, so any plan works (Free, Pro, Max). However, complex multi-step tasks (building skills, debugging code, multi-agent work) perform significantly better on **Opus**: If you're on the Free or Pro plan and Claude struggles with a task, the model matters. Sonnet is fast but often can't handle the kind of agentic work ClaudeClaw enables. Max ($100 or $200) with Opus is the recommended experience.
+**Which Claude plan works best?** Straxis runs the `claude` CLI, so any plan works (Free, Pro, Max). However, complex multi-step tasks (building skills, debugging code, multi-agent work) perform significantly better on **Opus**: If you're on the Free or Pro plan and Claude struggles with a task, the model matters. Sonnet is fast but often can't handle the kind of agentic work Straxis enables. Max ($100 or $200) with Opus is the recommended experience.
 
 **New to the terminal?** Download [Warp](https://www.warp.dev), it's a modern terminal with AI built in. If you hit any OS-level issues during setup (permissions, missing tools, PATH problems), type `/agent` in Warp and describe what went wrong. It will walk you through fixing it. This alone will save you hours of Googling.
 
@@ -107,7 +107,7 @@ That's it for hard requirements. Everything else (voice, video, WhatsApp) is opt
 
 ### Step 2: Create a Telegram bot
 
-You need a bot token from Telegram. This is what ClaudeClaw uses to send and receive messages.
+You need a bot token from Telegram. This is what Straxis uses to send and receive messages.
 
 1. Open Telegram and search for **@BotFather**
 2. Send `/newbot`
@@ -147,7 +147,7 @@ The wizard walks you through everything interactively:
 
 > **Prefer to let Claude handle it?** After cloning, `cd` into the repo, run `claude`, and paste:
 > ```
-> I just cloned ClaudeClaw. Please read README.md and set me up completely.
+> I just cloned Straxis. Please read README.md and set me up completely.
 > install deps, configure .env, help me get any API keys I need, and set up
 > the background service for my OS.
 > ```
@@ -182,7 +182,7 @@ or just start talking. Claude Code is running on your machine, it has access to 
 
 ### Step 7: Run as a background service
 
-You probably want ClaudeClaw running automatically, not manually in a terminal.
+You probably want Straxis running automatically, not manually in a terminal.
 
 **macOS**: the setup wizard installs a launchd agent. Or manually:
 ```bash
@@ -199,7 +199,7 @@ journalctl --user -u claudeclaw -f
 
 **Windows**: two supported paths. WSL2 is smoother, native works too.
 
-- **WSL2 (recommended)**: `wsl --install -d Ubuntu` in an elevated PowerShell, reboot, clone ClaudeClaw *inside* the Ubuntu filesystem (not `/mnt/c`), then follow the Linux steps above. Keep `~/.claude/` inside WSL2.
+- **WSL2 (recommended)**: `wsl --install -d Ubuntu` in an elevated PowerShell, reboot, clone Straxis *inside* the Ubuntu filesystem (not `/mnt/c`), then follow the Linux steps above. Keep `~/.claude/` inside WSL2.
 - **Native Windows**: the setup wizard registers a per-user Scheduled Task that runs at logon (no admin rights required). Manage it with:
   ```powershell
   schtasks /Query /TN "com.claudeclaw.main"
@@ -244,12 +244,12 @@ Output looks like:
 
 ---
 
-## Updating ClaudeClaw
+## Updating Straxis
 
 When a new version is released, update in 5 commands:
 
 ```bash
-cd claudeclaw-os       # go to your ClaudeClaw directory
+cd claudeclaw-os       # go to your Straxis directory
 git pull               # pull the latest code
 npm install            # install any new dependencies
 npm run migrate        # apply any pending migrations
@@ -266,7 +266,7 @@ Then restart the bot (Ctrl+C and `npm start`, or restart the background service)
 
 ## How it works
 
-![ClaudeClaw architecture](assets/architecture.png)
+![Straxis architecture](assets/architecture.png)
 
 ## What's included
 
@@ -354,7 +354,7 @@ The skill reads `GOOGLE_API_KEY` from the environment automatically.
 
 ### Google Workspace CLI (optional)
 
-> ClaudeClaw ships with bundled Gmail and Google Calendar skills that work great out of the box. This is an **optional alternative** if you want broader Google Workspace access from a single tool.
+> Straxis ships with bundled Gmail and Google Calendar skills that work great out of the box. This is an **optional alternative** if you want broader Google Workspace access from a single tool.
 
 [![Google Workspace CLI announcement](assets/workspace-cli-tweet.png)](https://x.com/addyosmani/status/2029372736267805081)
 
@@ -370,7 +370,7 @@ There are three ways Claude can interact with external services. They all achiev
 | | What it is | How Claude uses it |
 |---|---|---|
 | **CLI** (Command Line Interface) | A program you install on your machine that runs commands in the terminal. Think of it like a text-based app. | Claude runs terminal commands like `workspace drive list` or `workspace gmail send` through the Bash tool. It's the same as if you typed those commands yourself. |
-| **Skill** | A markdown file (`.md`) that teaches Claude how to do something specific, usually by combining CLI commands, API calls, or code into a workflow. | Claude reads the skill file and follows its instructions. ClaudeClaw's bundled Gmail skill, for example, tells Claude which Python scripts to run and how to format the output. |
+| **Skill** | A markdown file (`.md`) that teaches Claude how to do something specific, usually by combining CLI commands, API calls, or code into a workflow. | Claude reads the skill file and follows its instructions. Straxis's bundled Gmail skill, for example, tells Claude which Python scripts to run and how to format the output. |
 | **MCP** (Model Context Protocol) | A server that runs in the background and gives Claude access to tools directly, without going through the terminal. | Claude calls MCP tools natively, like calling a function. No terminal commands needed. It's the most seamless option but requires a running MCP server. |
 
 In short: a CLI is a tool you run in the terminal, a skill is a set of instructions that tells Claude how to use tools, and an MCP is a live server that gives Claude direct access to tools. They can all do similar things, just with different tradeoffs in setup and flexibility.
@@ -442,7 +442,7 @@ Any file Claude Code can open: PDFs, code, markdown, CSV, plain text. Caption is
 
 ### Videos → Gemini analysis
 
-ClaudeClaw downloads the video to `workspace/uploads/` and tells Claude to analyze it with the `gemini-api-dev` skill. Without `GOOGLE_API_KEY`, Claude receives the file path but can't understand the content. Telegram caps downloads at 20MB.
+Straxis downloads the video to `workspace/uploads/` and tells Claude to analyze it with the `gemini-api-dev` skill. Without `GOOGLE_API_KEY`, Claude receives the file path but can't understand the content. Telegram caps downloads at 20MB.
 
 ### File sending → Claude sends you files
 
@@ -517,7 +517,7 @@ cp -r skills/tldr ~/.claude/skills/tldr
 
 The next time the bot starts, `/tldr` appears in Telegram's autocomplete alongside the built-in commands. The description shown in the menu comes from the skill's `description` field in its frontmatter.
 
-**How it works:** On startup, ClaudeClaw scans `~/.claude/skills/` for folders containing a `SKILL.md` with valid YAML frontmatter. If `user_invocable: true` is set, the skill's `name` and `description` are registered with Telegram's `setMyCommands` API alongside the built-in commands. Telegram allows up to 100 commands total.
+**How it works:** On startup, Straxis scans `~/.claude/skills/` for folders containing a `SKILL.md` with valid YAML frontmatter. If `user_invocable: true` is set, the skill's `name` and `description` are registered with Telegram's `setMyCommands` API alongside the built-in commands. Telegram allows up to 100 commands total.
 
 **Important:** Telegram aggressively caches the command menu on mobile. After installing a new skill and restarting the bot, you may need to fully close Telegram (swipe it away from your app switcher, not just minimize) and reopen it before the new `/` commands appear.
 
@@ -559,7 +559,7 @@ A live web page that shows you everything happening inside your assistant: what 
 
 ![Dashboard architecture](assets/dashboard-architecture.png)
 
-When you start ClaudeClaw, a small web page starts running alongside the bot. It reads directly from the same database the bot uses and shows you the data in real time.
+When you start Straxis, a small web page starts running alongside the bot. It reads directly from the same database the bot uses and shows you the data in real time.
 
 Here's what happens when you use it:
 
@@ -613,7 +613,7 @@ It prints a long random string like `a3f8c2d1e5b794...`. this is your dashboard 
 
 #### Step 2: Add the password to your settings
 
-Open the `.env` file in your ClaudeClaw folder. (This is the same file where your Telegram token and other keys live. Open it with any text editor. TextEdit on Mac, Notepad on Windows, or whatever your terminal editor is.)
+Open the `.env` file in your Straxis folder. (This is the same file where your Telegram token and other keys live. Open it with any text editor. TextEdit on Mac, Notepad on Windows, or whatever your terminal editor is.)
 
 Add this line:
 
@@ -782,7 +782,7 @@ The dashboard adapts to how you read code, not the other way around. Settings �
 | **Color theme** | Dark / light / auto. Drives the entire SPA, not just one panel. |
 | **Custom hex accent** | Pick from six preset accents (mint / amber / cyan / pink / lavender / blue) or paste your own `#hex`. Live-previews across highlights, focus rings, badges, brain glow, and chart strokes. |
 | **UI scale** | Compact / cozy / comfortable. Changes font size and spacing globally — doesn't break any layout because every measurement uses the same scale variable. |
-| **Workspace name** | Rename the sidebar header. Useful if you run multiple ClaudeClaw installs (work / personal). |
+| **Workspace name** | Rename the sidebar header. Useful if you run multiple Straxis installs (work / personal). |
 | **Sidebar sections** | Collapse the sections you don't use so the rail is shorter on small screens. |
 | **Mission column order + widths** | Drag the columns; reorder by name; persist per-install. |
 
@@ -792,7 +792,7 @@ Everything writes to `dashboard_settings` via `PATCH /api/dashboard/settings` �
 
 ## Slack (optional)
 
-Requires a Slack User OAuth Token. This connects to your workspace so ClaudeClaw can read and send messages on your behalf.
+Requires a Slack User OAuth Token. This connects to your workspace so Straxis can read and send messages on your behalf.
 
 ### Step 1: Create a Slack app
 
@@ -800,7 +800,7 @@ Requires a Slack User OAuth Token. This connects to your workspace so ClaudeClaw
 2. Click the green **Create New App** button (top right)
 3. In the popup, choose **From scratch** (not "From an app manifest")
 4. Fill in:
-   - **App Name**: anything you want (e.g. `ClaudeClaw`)
+   - **App Name**: anything you want (e.g. `Straxis`)
    - **Pick a workspace**: select the Slack workspace you want to connect
 5. Click **Create App**
 
@@ -842,14 +842,14 @@ This is the critical step. You need to add permissions so the app can read and s
 6. You'll now see a **User OAuth Token** field with a token that starts with `xoxp-`
 7. Click **Copy** to copy the token
 
-### Step 4: Add the token to ClaudeClaw
+### Step 4: Add the token to Straxis
 
-1. Open your `.env` file in the ClaudeClaw project directory
+1. Open your `.env` file in the Straxis project directory
 2. Add the token:
    ```
    SLACK_USER_TOKEN=xoxp-your-token-here
    ```
-3. Restart ClaudeClaw
+3. Restart Straxis
 
 ### Step 5: Verify it works
 
@@ -858,11 +858,11 @@ Send `/slack` in your Telegram chat. You should see a numbered list of your rece
 If you get "Slack not connected", double-check:
 - The token starts with `xoxp-` (not `xoxb-` which is a bot token)
 - The `.env` file has no extra spaces around the `=` sign
-- You restarted ClaudeClaw after adding the token
+- You restarted Straxis after adding the token
 
 ### Using Slack from Claude Code (skill)
 
-ClaudeClaw ships with a Slack CLI at `dist/slack-cli.js` and a matching skill in `skills/slack/`. To use Slack via natural language from any Claude Code session:
+Straxis ships with a Slack CLI at `dist/slack-cli.js` and a matching skill in `skills/slack/`. To use Slack via natural language from any Claude Code session:
 
 ```bash
 cp -r skills/slack ~/.claude/skills/slack
@@ -1024,9 +1024,9 @@ The `store/` directory (database, WhatsApp session, logs) is gitignored with mul
 
 ## Memory
 
-![ClaudeClaw memory system diagram](assets/memory-diagram.png)
+![Straxis memory system diagram](assets/memory-diagram.png)
 
-ClaudeClaw has a structured memory system that extracts, consolidates, and recalls knowledge across all sessions. Everything is automatic.
+Straxis has a structured memory system that extracts, consolidates, and recalls knowledge across all sessions. Everything is automatic.
 
 ### Layer 1. Session resumption
 
@@ -1265,7 +1265,7 @@ Mission tasks go through the same FIFO message queue as user messages and schedu
 
 ## Database
 
-ClaudeClaw ships with SQLite and **creates everything automatically on first run**: No migrations, no setup, no external database server. File lives at `store/claudeclaw.db`.
+Straxis ships with SQLite and **creates everything automatically on first run**: No migrations, no setup, no external database server. File lives at `store/claudeclaw.db`.
 
 **Schema:**
 
@@ -1306,7 +1306,7 @@ SELECT * FROM sessions;
 
 ## Customizing your assistant (CLAUDE.md)
 
-`CLAUDE.md` is loaded into every Claude Code session. It's the personality and context file. the main thing to edit to make ClaudeClaw yours.
+`CLAUDE.md` is loaded into every Claude Code session. It's the personality and context file. the main thing to edit to make Straxis yours.
 
 The sections that matter most:
 
@@ -1324,7 +1324,7 @@ The sections that matter most:
 
 ## Building your context stack
 
-ClaudeClaw gets more useful the more context you give it. Each layer compounds on the last. Your CLAUDE.md is the foundation, skills add capabilities, and your file system becomes the knowledge base. The more you invest in these layers, the less you explain per message and the more your agents can do autonomously.
+Straxis gets more useful the more context you give it. Each layer compounds on the last. Your CLAUDE.md is the foundation, skills add capabilities, and your file system becomes the knowledge base. The more you invest in these layers, the less you explain per message and the more your agents can do autonomously.
 
 Here's how to think about it if you're a business owner:
 
@@ -1347,7 +1347,7 @@ Update my CLAUDE.md with this context:
 Claude can read any file on your machine. Organize key business docs where agents can find them:
 
 ```
-Create a ~/Business folder structure for my ClaudeClaw agents:
+Create a ~/Business folder structure for my Straxis agents:
 - ~/Business/SOPs/ for standard operating procedures
 - ~/Business/Templates/ for email templates, proposals, contracts
 - ~/Business/Clients/ for client briefs and notes
@@ -1410,11 +1410,11 @@ The startup banner is in `banner.txt` at the project root. Replace it with anyth
 
 ## Skills to install
 
-ClaudeClaw auto-loads every skill in `~/.claude/skills/`. Install a skill by copying its folder there.
+Straxis auto-loads every skill in `~/.claude/skills/`. Install a skill by copying its folder there.
 
 ### Bundled skills
 
-ClaudeClaw ships with ready-to-use skills in the `skills/` directory. Copy any of these to activate them:
+Straxis ships with ready-to-use skills in the `skills/` directory. Copy any of these to activate them:
 
 ```bash
 # Gmail: read, triage, reply, send, create filters
@@ -1487,11 +1487,11 @@ npm run typecheck # Type-check without compiling
 
 ## Is this compliant with Anthropic's Terms of Service?
 
-**It's a grey area, but signs point to yes for personal use.** Anthropic's Agent SDK (`@anthropic-ai/claude-agent-sdk`) is a published, official package. Boris Cherny (Anthropic) has indicated the Agent SDK can be used for personal usage with a Claude subscription. ClaudeClaw uses this SDK exclusively.
+**It's a grey area, but signs point to yes for personal use.** Anthropic's Agent SDK (`@anthropic-ai/claude-agent-sdk`) is a published, official package. Boris Cherny (Anthropic) has indicated the Agent SDK can be used for personal usage with a Claude subscription. Straxis uses this SDK exclusively.
 
-**How ClaudeClaw works:** The Agent SDK's `query()` spawns the `claude` binary as a child process. That subprocess manages its own auth from `~/.claude/`. ClaudeClaw never reads or transmits your token. It runs Claude Code and reads the output, identical to typing `claude -p "message"` in a terminal.
+**How Straxis works:** The Agent SDK's `query()` spawns the `claude` binary as a child process. That subprocess manages its own auth from `~/.claude/`. Straxis never reads or transmits your token. It runs Claude Code and reads the output, identical to typing `claude -p "message"` in a terminal.
 
-| | ClaudeClaw | Token-extraction tools |
+| | Straxis | Token-extraction tools |
 |---|---|---|
 | Runs the official `claude` CLI | ✅ | ❌ |
 | Auth stays in `~/.claude/` | ✅ | ❌ |
@@ -1507,11 +1507,11 @@ For server or multi-user deployments, set `ANTHROPIC_API_KEY` to use pay-per-tok
 
 ## Security
 
-ClaudeClaw has multiple security layers. Some are always on, others are opt-in. The setup wizard (`npm run setup`) configures all of them interactively.
+Straxis has multiple security layers. Some are always on, others are opt-in. The setup wizard (`npm run setup`) configures all of them interactively.
 
 ### Always on
 
-These protections are active in every ClaudeClaw installation, no configuration needed.
+These protections are active in every Straxis installation, no configuration needed.
 
 | Layer | What it does |
 |-------|-------------|
@@ -1539,7 +1539,7 @@ The PIN is stored as a salted SHA-256 hash. The plaintext never touches disk.
 
 ### Emergency kill switch (opt-in)
 
-Set `EMERGENCY_KILL_PHRASE` to a unique phrase. Sending it immediately stops all ClaudeClaw launchd/systemd services and force-exits the process. This is a hard stop, not a lock. Use it if something goes wrong and you need everything shut down now.
+Set `EMERGENCY_KILL_PHRASE` to a unique phrase. Sending it immediately stops all Straxis launchd/systemd services and force-exits the process. This is a hard stop, not a lock. Use it if something goes wrong and you need everything shut down now.
 
 The setup wizard can generate one for you, or you can choose your own.
 
@@ -1590,8 +1590,8 @@ Or view it in the dashboard via the API: `GET /api/audit?limit=50`.
 - Git needs these set once, globally, before it can do anything
 
 **Can't access the internet / "break out"**
-- ClaudeClaw runs the real Claude Code CLI, which has full internet access through its built-in tools (web search, web fetch, bash with curl, etc.)
-- If Claude says it can't access the internet, it's likely a skill or prompt issue, not a ClaudeClaw limitation
+- Straxis runs the real Claude Code CLI, which has full internet access through its built-in tools (web search, web fetch, bash with curl, etc.)
+- If Claude says it can't access the internet, it's likely a skill or prompt issue, not a Straxis limitation
 - Make sure your Claude Code CLI works in the terminal first: open a terminal, run `claude`, and ask it to search the web
 
 **Voice notes return an error**
@@ -1614,7 +1614,7 @@ Or view it in the dashboard via the API: `GET /api/audit?limit=50`.
 - Send `/newchat` for a fresh start
 
 **File downloads fail**
-- Telegram caps downloads at 20MB. this is a Telegram API limit, not a ClaudeClaw one
+- Telegram caps downloads at 20MB. this is a Telegram API limit, not a Straxis one
 
 ---
 
@@ -1624,22 +1624,22 @@ Or view it in the dashboard via the API: `GET /api/audit?limit=50`.
 No. There is no separate prompt to execute and no `Rebuild_Prompt.md` file. `CLAUDE.md` in the repo **is** the prompt, it loads automatically into every Claude Code session. You personalize it once (replace the `[BRACKETED]` placeholders with your info) and forget about it. Just clone the repo, run setup, and go. When you `git pull` updates, your personalized `.env` stays untouched (gitignored) and `CLAUDE.md` changes are merged by git.
 
 **"Does this use Claude Remote?"**
-No. ClaudeClaw has nothing to do with Anthropic's Remote product. It runs the `claude` CLI locally on your own machine (Mac, Linux, or Windows via WSL2) and pipes results to Telegram. No cloud VMs, no remote sessions.
+No. Straxis has nothing to do with Anthropic's Remote product. It runs the `claude` CLI locally on your own machine (Mac, Linux, or Windows via WSL2) and pipes results to Telegram. No cloud VMs, no remote sessions.
 
 **"Does this work on Windows?"**
-Yes, two ways. WSL2 is the smoothest (install WSL2, clone ClaudeClaw inside the WSL filesystem, run the normal Linux setup). Native Windows also works: the setup wizard registers a per-user Scheduled Task at logon (no admin rights), and agent activate/deactivate uses `schtasks` under the hood. War Room voice still needs WSL2 because the Python stack is POSIX-only.
+Yes, two ways. WSL2 is the smoothest (install WSL2, clone Straxis inside the WSL filesystem, run the normal Linux setup). Native Windows also works: the setup wizard registers a per-user Scheduled Task at logon (no admin rights), and agent activate/deactivate uses `schtasks` under the hood. War Room voice still needs WSL2 because the Python stack is POSIX-only.
 
 **"What is GOOGLE_API_KEY for?"**
 Video analysis via Google Gemini. It is **not** for Gmail or Google Calendar (those use separate OAuth credentials via the gmail and google-calendar skills). Get it free at [aistudio.google.com](https://aistudio.google.com).
 
 **"Should I watch the Claude Code video first?"**
-Recommended but not required. The video covers how Claude Code works under the hood, which helps you understand what ClaudeClaw is actually doing. But you can set up ClaudeClaw first and watch it later.
+Recommended but not required. The video covers how Claude Code works under the hood, which helps you understand what Straxis is actually doing. But you can set up Straxis first and watch it later.
 
 **"How do I update when a new version drops?"**
-`cd claudeclaw-os && git pull && npm install && npm run migrate && npm run build` then restart. See [Updating ClaudeClaw](#updating-claudeclaw) above.
+`cd claudeclaw-os && git pull && npm install && npm run migrate && npm run build` then restart. See [Updating Straxis](#updating-claudeclaw) above.
 
 **"Telegram formatting looks broken / not formatting properly"**
-ClaudeClaw converts Claude's Markdown to Telegram-safe HTML (bold, italic, code blocks, links). Telegram's formatting support is limited compared to a full web page. If something looks off, it's usually Telegram's rendering, not a bug. For very long or complex responses, the formatting is intentionally kept simple to avoid Telegram parse errors.
+Straxis converts Claude's Markdown to Telegram-safe HTML (bold, italic, code blocks, links). Telegram's formatting support is limited compared to a full web page. If something looks off, it's usually Telegram's rendering, not a bug. For very long or complex responses, the formatting is intentionally kept simple to avoid Telegram parse errors.
 
 **"Can I add extra security like 2FA?"**
 `ALLOWED_CHAT_ID` restricts the bot to your Telegram account, which is the default security layer. Community members have added Google Authenticator (TOTP) for tiered permissions (read-only vs elevated actions with time-limited re-auth). This isn't built in yet, but it's a straightforward addition to `handleMessage()` in `src/bot.ts` if you want that extra layer.
@@ -1769,13 +1769,13 @@ Everything else runs without modification.
 
 ## Creating a Team of Agents
 
-This is a core feature, not experimental. Setting up multiple agents is straightforward and one of the most powerful things about ClaudeClaw.
+This is a core feature, not experimental. Setting up multiple agents is straightforward and one of the most powerful things about Straxis.
 
 **What are agents?** Instead of one bot doing everything, you can spin up specialist bots. Each one is its own Telegram chat with its own personality, its own context window, and its own focus area. Think of it like having a small team of people, each in their own DM thread on your phone.
 
-**How it works in plain English:** Each agent is just another Telegram bot running the same ClaudeClaw code, but with a different personality file (CLAUDE.md) and a different Telegram token. They all share your machine, your database, and your skills. The main agent can delegate work to specialists, and they ping you back on Telegram when they're done.
+**How it works in plain English:** Each agent is just another Telegram bot running the same Straxis code, but with a different personality file (CLAUDE.md) and a different Telegram token. They all share your machine, your database, and your skills. The main agent can delegate work to specialists, and they ping you back on Telegram when they're done.
 
-ClaudeClaw can run **specialist agents** alongside the main bot. Each agent is its own Telegram bot with its own personality, its own Claude Code session, and its own chat on your phone.
+Straxis can run **specialist agents** alongside the main bot. Each agent is its own Telegram bot with its own personality, its own Claude Code session, and its own chat on your phone.
 
 ![Agent avatars](assets/agent-comms.png) ![Agent avatars](assets/agent-content.png) ![Agent avatars](assets/agent-ops.png) ![Agent avatars](assets/agent-research.png)
 
@@ -1785,7 +1785,7 @@ ClaudeClaw can run **specialist agents** alongside the main bot. Each agent is i
 
 ### Why agents?
 
-Your main ClaudeClaw bot does everything. That's powerful but also means one long conversation, one context window, and one personality trying to handle email, research, billing, and content all at once.
+Your main Straxis bot does everything. That's powerful but also means one long conversation, one context window, and one personality trying to handle email, research, billing, and content all at once.
 
 Agents let you split the work:
 
@@ -1921,7 +1921,7 @@ npm start -- --agent research   # Terminal 4
 
 Each will show:
 ```
-ClaudeClaw agent [comms] online: @yourname_comms_bot
+Straxis agent [comms] online: @yourname_comms_bot
 ```
 
 Your main bot keeps running in its own terminal as usual (`npm start`). Close the terminal and the agent dies.
@@ -2195,7 +2195,7 @@ curl -X POST "https://api.telegram.org/bot<TOKEN>/setMyProfilePhoto" \
 
 ## Uninstalling
 
-To completely remove ClaudeClaw OS (services, config, database, temp files):
+To completely remove Straxis (services, config, database, temp files):
 
 ```bash
 npm run uninstall

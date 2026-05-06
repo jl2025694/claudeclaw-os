@@ -1,5 +1,5 @@
 """
-War Room Voice Server for ClaudeClaw.
+War Room Voice Server for Straxis.
 
 Two modes, selected by the WARROOM_MODE environment variable:
 
