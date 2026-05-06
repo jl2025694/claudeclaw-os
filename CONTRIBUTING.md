@@ -1,4 +1,4 @@
-# Contributing to Straxis
+# Contributing to HansCorp
 
 ## Adding a migration
 

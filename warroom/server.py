@@ -1,5 +1,5 @@
 """
-War Room Voice Server for Straxis.
+War Room Voice Server for HansCorp.
 
 Two modes, selected by the WARROOM_MODE environment variable:
 

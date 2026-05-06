@@ -1,5 +1,5 @@
 /**
- * Standalone WhatsApp daemon — runs independently of Straxis.
+ * Standalone WhatsApp daemon — runs independently of HansCorp.
  * - Keeps a WhatsApp Web session alive via whatsapp-web.js + Puppeteer
  * - Exposes CDP on port 9222 (fixed) for live chat/message reads
  * - HTTP API on port 4242 for status + queued sends

@@ -1857,7 +1857,7 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
     const chatId = c.req.query('chatId') || '';
     const info = getBotInfo();
     return c.json({
-      botName: info.name || 'Straxis',
+      botName: info.name || 'HansCorp',
       botUsername: info.username || '',
       pid: process.pid,
       chatId: chatId || null,
@@ -1912,7 +1912,7 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
     }
     const mainStats = getAgentTokenStats('main');
     const allAgents = [
-      { id: 'main', name: formatAgentDisplayName('main'), description: 'Primary Straxis bot', model: getMainModelOverride() ?? 'claude-opus-4-6', running: mainRunning, todayTurns: mainStats.todayTurns, todayCost: mainStats.todayCost, avatar_etag: avatarEtagForId('main') },
+      { id: 'main', name: formatAgentDisplayName('main'), description: 'Primary HansCorp bot', model: getMainModelOverride() ?? 'claude-opus-4-6', running: mainRunning, todayTurns: mainStats.todayTurns, todayCost: mainStats.todayCost, avatar_etag: avatarEtagForId('main') },
       ...agents,
     ];
 
@@ -2333,7 +2333,7 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
       if (id !== 'main') {
         try { description = loadAgentConfig(id).description || ''; } catch { /* skip */ }
       } else {
-        description = 'Primary Straxis bot — general triage and routing';
+        description = 'Primary HansCorp bot — general triage and routing';
       }
       const entries = getHiveMindEntries(200, id);
       const allFiltered = entries

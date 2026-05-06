@@ -19,7 +19,7 @@ function readEnv(): Record<string, string> {
 }
 
 const env = readEnv();
-const BACKUP_DIR = env.BACKUP_DIR || path.join(os.homedir(), 'Backups', 'straxis');
+const BACKUP_DIR = env.BACKUP_DIR || path.join(os.homedir(), 'Backups', 'hanscorp');
 const KEEP_DAYS = parseInt(env.BACKUP_KEEP_DAYS || '14', 10) || 14;
 const KEEP_COUNT = parseInt(env.BACKUP_KEEP_COUNT || '30', 10) || 30;
 const DRIVE_UPLOAD_ENABLED = (env.BACKUP_GDRIVE_ENABLED || 'true').toLowerCase() === 'true';
@@ -45,7 +45,7 @@ function prune(): void {
   const now = Date.now();
   const maxAgeMs = KEEP_DAYS * 24 * 60 * 60 * 1000;
   const files = fs.readdirSync(BACKUP_DIR)
-    .filter((name) => /^straxis-backup-.+\.tgz$/.test(name))
+    .filter((name) => /^hanscorp-backup-.+\.tgz$/.test(name))
     .map((name) => {
       const full = path.join(BACKUP_DIR, name);
       return { name, full, mtime: fs.statSync(full).mtimeMs };
@@ -83,7 +83,7 @@ function ensureDriveFolder(): string {
   const existing = readDriveFolderId();
   if (existing) return existing;
 
-  const name = env.BACKUP_GDRIVE_FOLDER_NAME || 'Straxis Backups';
+  const name = env.BACKUP_GDRIVE_FOLDER_NAME || 'HansCorp Backups';
   const gdrive = path.join(os.homedir(), '.config', 'drive', 'gdrive.py');
   const raw = execFileSync(
     pythonPath(),
@@ -159,7 +159,7 @@ function main(): void {
   };
   fs.writeFileSync(path.join(staging, 'manifest.json'), JSON.stringify(manifest, null, 2));
 
-  const archive = path.join(BACKUP_DIR, `straxis-backup-${stamp()}.tgz`);
+  const archive = path.join(BACKUP_DIR, `hanscorp-backup-${stamp()}.tgz`);
   try {
     execFileSync('tar', ['-czf', archive, '-C', staging, '.'], { stdio: 'pipe' });
     fs.chmodSync(archive, 0o600);

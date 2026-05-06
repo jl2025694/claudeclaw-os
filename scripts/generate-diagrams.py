@@ -1,4 +1,4 @@
-"""Generate Straxis README diagrams via Nano Banana Pro (gemini-3-pro-image-preview).
+"""Generate HansCorp README diagrams via Nano Banana Pro (gemini-3-pro-image-preview).
 
 Driven by a JSON manifest:
     [
@@ -53,7 +53,7 @@ accent bar to the left in the section's color. No drop shadows. No bevels. No 3D
 photorealism. No emoji unless explicitly requested. The whole composition feels like
 an annotated chip-architecture diagram drawn by a meticulous engineer at 2am.
 
-Do not put any text outside the diagram boxes except a small "Straxis" footer in
+Do not put any text outside the diagram boxes except a small "HansCorp" footer in
 dim grey at the bottom-left and a small subtitle at the bottom-right.
 """.strip()
 

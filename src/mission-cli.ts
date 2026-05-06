@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Straxis Mission CLI
+ * HansCorp Mission CLI
  *
  * Used by Claude assistants to create and manage one-shot mission tasks
  * that are picked up and executed by the target agent's scheduler.

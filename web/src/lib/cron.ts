@@ -114,7 +114,7 @@ export function buildSchedule(model: SchedModel): { cron: string; warning?: stri
 }
 
 // Plain-English description of a 5-field cron expression. Covers the
-// shapes Straxis users actually write: fixed times, comma-lists,
+// shapes HansCorp users actually write: fixed times, comma-lists,
 // step values, weekday ranges. Falls back to the raw cron string when
 // it sees something it doesn't recognize so we never lie about
 // behavior.

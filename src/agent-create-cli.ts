@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Non-interactive CLI for creating Straxis agents.
+ * Non-interactive CLI for creating HansCorp agents.
  * Designed to be called by the Telegram agent or CI scripts.
  *
  * Usage:

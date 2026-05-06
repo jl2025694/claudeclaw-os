@@ -1,5 +1,5 @@
 #!/bin/bash
-# Straxis OS — Full Uninstall
+# HansCorp OS — Full Uninstall
 # Removes everything: services, config, database, and the repo itself.
 # Usage: bash scripts/uninstall.sh
 #   or:  npm run uninstall
@@ -16,7 +16,7 @@ RESET='\033[0m'
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 echo ""
-echo -e "${BOLD}Straxis OS — Uninstall${RESET}"
+echo -e "${BOLD}HansCorp OS — Uninstall${RESET}"
 echo ""
 
 # ── 1. Stop and remove launchd services (macOS) ─────────────────────────
@@ -94,5 +94,5 @@ echo -e "  To finish, delete the repo:"
 echo ""
 echo -e "  ${CYAN}cd .. && rm -rf $(basename "$PROJECT_ROOT")${RESET}"
 echo ""
-echo -e "  ${GREEN}✓${RESET}  ${BOLD}Straxis OS uninstalled.${RESET}"
+echo -e "  ${GREEN}✓${RESET}  ${BOLD}HansCorp OS uninstalled.${RESET}"
 echo ""

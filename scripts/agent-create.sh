@@ -1,5 +1,5 @@
 #!/bin/bash
-# Straxis Agent Creator
+# HansCorp Agent Creator
 # Usage: npm run agent:create
 # Or:    bash scripts/agent-create.sh
 
@@ -12,7 +12,7 @@ if [ -z "$CLAUDECLAW_CONFIG" ]; then
 fi
 CLAUDECLAW_CONFIG="${CLAUDECLAW_CONFIG:-$HOME/.claudeclaw}"
 
-echo "=== Straxis Agent Creator ==="
+echo "=== HansCorp Agent Creator ==="
 echo ""
 
 # Step 1: Pick a template or start blank
@@ -70,7 +70,7 @@ echo ""
 echo "  1. Open Telegram and message @BotFather"
 echo "  2. Send /newbot"
 AGENT_LABEL=$(echo "$AGENT_ID" | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
-echo "  3. Name it something like 'My $AGENT_LABEL Agent' or 'Straxis $AGENT_LABEL'"
+echo "  3. Name it something like 'My $AGENT_LABEL Agent' or 'HansCorp $AGENT_LABEL'"
 echo "  4. Give it a username like 'claw_${AGENT_ID}_bot'"
 echo "  5. Copy the token BotFather gives you"
 echo ""

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Straxis Pre-Commit Safety Check
+# HansCorp Pre-Commit Safety Check
 # Prevents accidental commit of personal data to the public template repo.
 #
 # Setup:
@@ -31,7 +31,7 @@ if [ "$PERSONAL_PATTERNS" = "YOUR_USERNAME_HERE|YOUR_REAL_NAME_HERE|YOUR_CHAT_ID
   echo ""
 fi
 
-echo "Running Straxis pre-commit safety checks..."
+echo "Running HansCorp pre-commit safety checks..."
 echo ""
 
 # 1. Check for personal data in staged files (only if patterns are customized)

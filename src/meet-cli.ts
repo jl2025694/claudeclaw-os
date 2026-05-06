@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Straxis Meet CLI
+ * HansCorp Meet CLI
  *
  * Wraps the Pika pikastream-video-meeting skill so agents can send
  * themselves (or another agent) into a Google Meet / Zoom call as a
@@ -839,7 +839,7 @@ function cmdShow(): void {
 const command = process.argv[2];
 
 function printHelp(): void {
-  process.stderr.write(`Straxis Meet CLI
+  process.stderr.write(`HansCorp Meet CLI
 
 Commands:
   join        Pika avatar mode. Bot joins with a real-time AI avatar.

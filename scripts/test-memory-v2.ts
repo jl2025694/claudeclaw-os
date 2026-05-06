@@ -104,13 +104,13 @@ const testCases: TestCase[] = [
   {
     label: 'Project context',
     shouldStore: true,
-    user: 'The Straxis memory overhaul is the priority this week. After that we need to prep the YouTube video about Claude Code tricks.',
+    user: 'The HansCorp memory overhaul is the priority this week. After that we need to prep the YouTube video about Claude Code tricks.',
     assistant: 'Got it. Memory overhaul first, then YouTube prep.',
   },
   {
     label: 'Contact/relationship info',
     shouldStore: true,
-    user: 'Eran is my co-founder on Straxis. He handles the SDK integration side. Rolland does the scheduler work. Both are active contributors on GitHub.',
+    user: 'Eran is my co-founder on HansCorp. He handles the SDK integration side. Rolland does the scheduler work. Both are active contributors on GitHub.',
     assistant: 'Noted the team structure.',
   },
   {

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Install Straxis launchd agents for auto-start on login + auto-restart on crash
+# Install HansCorp launchd agents for auto-start on login + auto-restart on crash
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -16,7 +16,7 @@ if [ -z "$NODE_PATH" ]; then
   exit 1
 fi
 
-echo "Straxis launchd installer"
+echo "HansCorp launchd installer"
 echo "============================"
 echo "Using Node binary: $NODE_PATH"
 echo ""

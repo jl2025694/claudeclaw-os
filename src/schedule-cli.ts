@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Straxis Schedule CLI
+ * HansCorp Schedule CLI
  *
  * Used by your Claude assistant via the Bash tool to manage scheduled tasks.
  *

@@ -1,6 +1,6 @@
 """
 ClaudeAgentBridge: a Pipecat FrameProcessor that takes routed messages,
-calls the appropriate Straxis agent via the Node.js voice bridge,
+calls the appropriate HansCorp agent via the Node.js voice bridge,
 and emits TTS-ready text frames with the correct agent voice.
 
 The bridge invokes:

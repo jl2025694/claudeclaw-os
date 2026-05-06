@@ -66,7 +66,7 @@ async function main(): Promise<void> {
   }
 
   const payload = {
-    source: 'straxis',
+    source: 'hanscorp',
     event,
     agentId: process.env.CLAUDECLAW_AGENT_ID || process.env.CLAUDE_AGENT_ID || 'local',
     projectRoot: PROJECT_ROOT,
@@ -76,7 +76,7 @@ async function main(): Promise<void> {
 
   const body = JSON.stringify(payload).slice(0, 200_000);
   const headers: Record<string, string> = { 'content-type': 'application/json' };
-  if (env.N8N_WEBHOOK_SECRET) headers['x-straxis-secret'] = env.N8N_WEBHOOK_SECRET;
+  if (env.N8N_WEBHOOK_SECRET) headers['x-hanscorp-secret'] = env.N8N_WEBHOOK_SECRET;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 4500);

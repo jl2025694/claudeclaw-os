@@ -1,5 +1,5 @@
 /**
- * Security module for Straxis.
+ * Security module for HansCorp.
  *
  * Layers:
  * 1. PIN lock + idle auto-lock: session must be unlocked before commands execute
@@ -132,7 +132,7 @@ export function checkKillPhrase(message: string): boolean {
 
 /**
  * Execute the emergency shutdown.
- * Stops all Straxis services and force-exits after a brief timeout.
+ * Stops all HansCorp services and force-exits after a brief timeout.
  */
 export function executeEmergencyKill(): void {
   logger.warn('EMERGENCY KILL activated');
@@ -142,7 +142,7 @@ export function executeEmergencyKill(): void {
 
   try {
     if (os.platform() === 'darwin') {
-      // Stop all Straxis launchd services
+      // Stop all HansCorp launchd services
       try {
         const output = execSync('launchctl list 2>/dev/null', { encoding: 'utf-8', timeout: 3000 });
         for (const line of output.split('\n')) {

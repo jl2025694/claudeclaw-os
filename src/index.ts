@@ -82,7 +82,7 @@ function showBanner(): void {
     const banner = fs.readFileSync(bannerPath, 'utf-8');
     console.log('\n' + banner);
   } catch {
-    console.log('\n  Straxis\n');
+    console.log('\n  HansCorp\n');
   }
 }
 
@@ -363,10 +363,10 @@ async function main(): Promise<void> {
   process.on('SIGINT', () => void shutdown());
   process.on('SIGTERM', () => void shutdown());
 
-  logger.info({ agentId: AGENT_ID }, 'Starting Straxis...');
+  logger.info({ agentId: AGENT_ID }, 'Starting HansCorp...');
 
   // Clear any existing webhook so polling works cleanly (e.g., if token was
-  // previously used with a webhook-based bot or another Straxis instance).
+  // previously used with a webhook-based bot or another HansCorp instance).
   try {
     await bot.api.deleteWebhook({ drop_pending_updates: false });
   } catch (err) {
@@ -376,16 +376,16 @@ async function main(): Promise<void> {
   await bot.start({
     onStart: (botInfo) => {
       setTelegramConnected(true);
-      setBotInfo(botInfo.username ?? '', botInfo.first_name ?? 'Straxis');
-      logger.info({ username: botInfo.username }, 'Straxis is running');
+      setBotInfo(botInfo.username ?? '', botInfo.first_name ?? 'HansCorp');
+      logger.info({ username: botInfo.username }, 'HansCorp is running');
       if (AGENT_ID === 'main') {
-        console.log(`\n  Straxis online: @${botInfo.username}`);
+        console.log(`\n  HansCorp online: @${botInfo.username}`);
         if (!ALLOWED_CHAT_ID) {
           console.log(`  Send /chatid to get your chat ID for ALLOWED_CHAT_ID`);
         }
         console.log();
       } else {
-        console.log(`\n  Straxis agent [${AGENT_ID}] online: @${botInfo.username}\n`);
+        console.log(`\n  HansCorp agent [${AGENT_ID}] online: @${botInfo.username}\n`);
       }
     },
   });

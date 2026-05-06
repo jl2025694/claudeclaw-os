@@ -188,7 +188,7 @@ async function runCheck(): Promise<CheckStatus[]> {
 function formatAlert(changes: CheckStatus[], all: CheckStatus[]): string {
   const bad = all.filter((c) => !c.ok);
   const lines = [
-    '<b>Straxis health monitor</b>',
+    '<b>HansCorp health monitor</b>',
     '',
     ...changes.map((c) => `${c.ok ? '[OK]' : '[WARN]'} <b>${escapeHtml(c.label)}</b>: ${escapeHtml(c.detail)}`),
   ];

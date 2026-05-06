@@ -159,7 +159,7 @@ export const CONTEXT_LIMIT = parseInt(
   10,
 );
 
-// Dashboard — web UI for monitoring Straxis state
+// Dashboard — web UI for monitoring HansCorp state
 export const DASHBOARD_PORT = parseInt(
   process.env.DASHBOARD_PORT || envConfig.DASHBOARD_PORT || '3141',
   10,
