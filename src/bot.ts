@@ -893,8 +893,8 @@ export function createBot(): Bot {
     .catch((err) => logger.warn({ err }, 'Failed to register bot commands with Telegram'));
 
   // /help — list available commands
-  bot.command('help', (ctx) => {
-    if (!isAuthorised(ctx.chat!.id)) return;
+  bot.command('help', async (ctx) => {
+    if (await replyIfLocked(ctx)) return;
     return ctx.reply(
       'HansCorp — Commands\n\n' +
       '/newchat — Start a new Claude session\n' +
@@ -925,8 +925,8 @@ export function createBot(): Bot {
   });
 
   // /start — simple greeting (auth-gated after setup)
-  bot.command('start', (ctx) => {
-    if (ALLOWED_CHAT_ID && !isAuthorised(ctx.chat!.id)) return;
+  bot.command('start', async (ctx) => {
+    if (ALLOWED_CHAT_ID && await replyIfLocked(ctx)) return;
     if (AGENT_ID !== 'main') {
       return ctx.reply(`${AGENT_ID.charAt(0).toUpperCase() + AGENT_ID.slice(1)} agent online.`);
     }
@@ -1204,7 +1204,7 @@ export function createBot(): Bot {
 
   // /stop — interrupt the current agent query
   bot.command('stop', async (ctx) => {
-    if (!isAuthorised(ctx.chat!.id)) return;
+    if (await replyIfLocked(ctx)) return;
     const chatIdStr = ctx.chat!.id.toString();
     const aborted = abortActiveQuery(chatIdStr);
     if (aborted) {
@@ -1216,7 +1216,7 @@ export function createBot(): Bot {
 
   // /agents — list available agents for delegation
   bot.command('agents', async (ctx) => {
-    if (!isAuthorised(ctx.chat!.id)) return;
+    if (await replyIfLocked(ctx)) return;
     const agents = getAvailableAgents();
     if (agents.length === 0) {
       await ctx.reply('No agents configured. Add agent configs under agents/ directory.');
@@ -1243,7 +1243,7 @@ export function createBot(): Bot {
 
   // /status — show security status
   bot.command('status', async (ctx) => {
-    if (!isAuthorised(ctx.chat!.id)) return;
+    if (await replyIfLocked(ctx)) return;
     const s = getSecurityStatus();
     const lines = [
       `PIN lock: ${s.pinEnabled ? 'enabled' : 'disabled'}`,
@@ -1463,17 +1463,19 @@ export function createBot(): Bot {
 
   // Voice messages — real transcription via Groq Whisper
   bot.on('message:voice', async (ctx) => {
-    const caps = voiceCapabilities();
-    if (!caps.stt) {
-      await ctx.reply('Voice transcription not configured. Add GROQ_API_KEY to .env');
-      return;
-    }
     const chatId = ctx.chat!.id;
     if (!isAuthorised(chatId)) return;
     if (!ALLOWED_CHAT_ID) {
       await ctx.reply(
         `Your chat ID is ${chatId}.\n\nAdd this to your .env:\n\nALLOWED_CHAT_ID=${chatId}\n\nThen restart HansCorp.`,
       );
+      return;
+    }
+    if (await replyIfLocked(ctx)) return;
+
+    const caps = voiceCapabilities();
+    if (!caps.stt) {
+      await ctx.reply('Voice transcription not configured. Add GROQ_API_KEY to .env');
       return;
     }
 
@@ -1501,6 +1503,7 @@ export function createBot(): Bot {
       );
       return;
     }
+    if (await replyIfLocked(ctx)) return;
 
     try {
       const photo = ctx.message.photo[ctx.message.photo.length - 1];
@@ -1524,6 +1527,7 @@ export function createBot(): Bot {
       );
       return;
     }
+    if (await replyIfLocked(ctx)) return;
 
     try {
       const doc = ctx.message.document;
@@ -1546,6 +1550,7 @@ export function createBot(): Bot {
       await ctx.reply(`Your chat ID is ${chatId}.\n\nAdd this to your .env:\n\nALLOWED_CHAT_ID=${chatId}\n\nThen restart HansCorp.`);
       return;
     }
+    if (await replyIfLocked(ctx)) return;
 
     try {
       const video = ctx.message.video;
@@ -1568,6 +1573,7 @@ export function createBot(): Bot {
       await ctx.reply(`Your chat ID is ${chatId}.\n\nAdd this to your .env:\n\nALLOWED_CHAT_ID=${chatId}\n\nThen restart HansCorp.`);
       return;
     }
+    if (await replyIfLocked(ctx)) return;
 
     try {
       const videoNote = ctx.message.video_note;

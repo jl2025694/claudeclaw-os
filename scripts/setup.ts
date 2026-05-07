@@ -769,7 +769,7 @@ async function main() {
       // Idle timeout (only ask when PIN is set)
       console.log();
       info('Auto-lock re-locks the bot after a period of inactivity.');
-      const idleMin = await ask('Lock after how many minutes idle?', '30');
+      const idleMin = await ask('Lock after how many minutes idle?', '720');
       const idleVal = parseInt(idleMin) || 0;
       if (idleVal > 0) {
         env.IDLE_LOCK_MINUTES = String(idleVal);
@@ -907,7 +907,7 @@ async function main() {
     '',
     '# ── Security ──────────────────────────────────────────────────',
     env.SECURITY_PIN_HASH ? `SECURITY_PIN_HASH=${env.SECURITY_PIN_HASH}` : '# SECURITY_PIN_HASH=',
-    env.IDLE_LOCK_MINUTES ? `IDLE_LOCK_MINUTES=${env.IDLE_LOCK_MINUTES}` : '# IDLE_LOCK_MINUTES=30',
+    env.IDLE_LOCK_MINUTES ? `IDLE_LOCK_MINUTES=${env.IDLE_LOCK_MINUTES}` : '# IDLE_LOCK_MINUTES=720',
     env.EMERGENCY_KILL_PHRASE ? `EMERGENCY_KILL_PHRASE=${env.EMERGENCY_KILL_PHRASE}` : '# EMERGENCY_KILL_PHRASE=',
     '',
     '# ── Database Encryption ───────────────────────────────────────',
