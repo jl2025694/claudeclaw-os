@@ -139,6 +139,7 @@ async function main(): Promise<void> {
     pinHash: SECURITY_PIN_HASH || undefined,
     idleLockMinutes: IDLE_LOCK_MINUTES,
     killPhrase: EMERGENCY_KILL_PHRASE || undefined,
+    statePath: path.join(STORE_DIR, 'security-state.json'),
   });
   setAuditCallback((entry) => {
     insertAuditLog(entry.agentId, entry.chatId, entry.action, entry.detail, entry.blocked);

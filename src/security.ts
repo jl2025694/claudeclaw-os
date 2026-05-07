@@ -11,7 +11,9 @@
 
 import crypto from 'crypto';
 import { execSync } from 'child_process';
+import fs from 'fs';
 import os from 'os';
+import path from 'path';
 
 import { logger } from './logger.js';
 
@@ -21,12 +23,17 @@ let _pinHash = '';           // salted SHA-256 hash of the PIN
 let _pinSalt = '';           // salt prefix extracted from the stored hash
 let _idleLockMinutes = 0;   // 0 = disabled
 let _killPhrase = '';        // empty = disabled
+let _statePath = '';         // optional shared state path for lock + activity
 
 export function initSecurity(opts: {
   pinHash?: string;
   idleLockMinutes?: number;
   killPhrase?: string;
+  statePath?: string;
 }): void {
+  _statePath = opts.statePath || '';
+  _idleLockMinutes = opts.idleLockMinutes ?? 0;
+  _killPhrase = opts.killPhrase || '';
   if (opts.pinHash) {
     // Format: "salt:hash" or legacy bare hash (no salt)
     const parts = opts.pinHash.split(':');
@@ -39,10 +46,11 @@ export function initSecurity(opts: {
       _pinSalt = '';
     }
     _locked = true;
-    logger.info('Security: PIN lock enabled, bot starts locked');
+    loadState();
+    isLocked();
+    persistState();
+    logger.info({ locked: _locked }, 'Security: PIN lock enabled');
   }
-  _idleLockMinutes = opts.idleLockMinutes ?? 0;
-  _killPhrase = opts.killPhrase || '';
 
   if (_idleLockMinutes > 0 && _pinHash) {
     logger.info({ minutes: _idleLockMinutes }, 'Security: idle auto-lock enabled');
@@ -62,13 +70,53 @@ export function isSecurityEnabled(): boolean {
 let _locked = false;
 let _lastActivity = Date.now();
 
+function pinFingerprint(): string {
+  return _pinHash ? crypto.createHash('sha256').update(_pinHash).digest('hex') : '';
+}
+
+function loadState(): void {
+  if (!_statePath || !_pinHash) return;
+  try {
+    if (!fs.existsSync(_statePath)) return;
+    const raw = JSON.parse(fs.readFileSync(_statePath, 'utf-8'));
+    if (!raw || raw.pinFingerprint !== pinFingerprint()) return;
+    if (typeof raw.locked === 'boolean') _locked = raw.locked;
+    if (Number.isFinite(raw.lastActivity)) _lastActivity = Number(raw.lastActivity);
+  } catch (err) {
+    logger.warn({ err, statePath: _statePath }, 'Security: failed to load lock state');
+  }
+}
+
+function persistState(): void {
+  if (!_statePath || !_pinHash) return;
+  try {
+    fs.mkdirSync(path.dirname(_statePath), { recursive: true });
+    const tmp = `${_statePath}.${process.pid}.tmp`;
+    fs.writeFileSync(
+      tmp,
+      JSON.stringify({
+        locked: _locked,
+        lastActivity: _lastActivity,
+        pinFingerprint: pinFingerprint(),
+        updatedAt: Date.now(),
+      }),
+      { mode: 0o600 },
+    );
+    fs.renameSync(tmp, _statePath);
+  } catch (err) {
+    logger.warn({ err, statePath: _statePath }, 'Security: failed to persist lock state');
+  }
+}
+
 export function isLocked(): boolean {
   if (!_pinHash) return false;
+  loadState();
   // Check idle timeout on every lock query (simpler than setInterval)
   if (!_locked && _idleLockMinutes > 0) {
     const idleMs = Date.now() - _lastActivity;
     if (idleMs >= _idleLockMinutes * 60 * 1000) {
       _locked = true;
+      persistState();
       logger.info('Security: session auto-locked (idle timeout)');
     }
   }
@@ -78,6 +126,7 @@ export function isLocked(): boolean {
 export function lock(): void {
   if (!_pinHash) return;
   _locked = true;
+  persistState();
   logger.info('Security: session locked');
 }
 
@@ -86,6 +135,7 @@ export function unlock(pin: string): boolean {
   if (verifyPin(pin, _pinHash)) {
     _locked = false;
     _lastActivity = Date.now();
+    persistState();
     logger.info('Security: session unlocked');
     return true;
   }
@@ -96,6 +146,7 @@ export function unlock(pin: string): boolean {
 /** Record activity to reset idle timeout. */
 export function touchActivity(): void {
   _lastActivity = Date.now();
+  persistState();
 }
 
 /**
@@ -331,4 +382,14 @@ export function getSecurityStatus(): {
     killPhraseEnabled: !!_killPhrase,
     lastActivity: _lastActivity,
   };
+}
+
+export function _resetSecurityForTests(): void {
+  _pinHash = '';
+  _pinSalt = '';
+  _idleLockMinutes = 0;
+  _killPhrase = '';
+  _statePath = '';
+  _locked = false;
+  _lastActivity = Date.now();
 }
