@@ -299,7 +299,7 @@ export async function handleTextTurn(
         type: 'status_update',
         turnId,
         phase: 'starting',
-        label: 'Starting Main…',
+        label: 'Starting Ivonne…',
         agentId: 'main',
       });
       decision = {
