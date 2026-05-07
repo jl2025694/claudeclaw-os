@@ -157,7 +157,12 @@ export function HiveMind() {
                     {formatRelativeTime(e.created_at)}
                   </td>
                   <td class="px-3 py-2">
-                    <span class="inline-flex items-center gap-1.5" style={{ color: AGENT_HUE[e.agent_id] || 'var(--color-text-muted)' }}>
+                    <span
+                      class="inline-flex items-center gap-1.5"
+                      data-agent-id-tooltip={`Agent ID: ${e.agent_id}`}
+                      title={`Agent ID: ${e.agent_id}`}
+                      style={{ color: AGENT_HUE[e.agent_id] || 'var(--color-text-muted)' }}
+                    >
                       <span class="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'currentColor' }} />
                       {agentList.data?.agents?.find((a) => a.id === e.agent_id)?.name || agentDisplayName(e.agent_id)}
                     </span>

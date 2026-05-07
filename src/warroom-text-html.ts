@@ -221,6 +221,7 @@ export function getWarRoomTextHtml(token: string, chatId: string, meetingId: str
   .agent-row:hover { background: var(--bg-elev-2); border-color: var(--border-strong); transform: translateY(-1px); }
   .agent-row::after {
     content: attr(data-agent-id-tooltip);
+    display: none;
     position: absolute;
     left: 50%;
     bottom: calc(100% + 8px);
@@ -240,6 +241,29 @@ export function getWarRoomTextHtml(token: string, chatId: string, meetingId: str
     transition: opacity 90ms ease, transform 90ms ease;
   }
   .agent-row:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .agent-id-tooltip-layer {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 2147483647;
+    max-width: 220px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.28);
+    background: #050505;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.72);
+    color: #fff;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(2px);
+    transition: opacity 80ms ease, transform 80ms ease;
+  }
+  .agent-id-tooltip-layer.show { opacity: 1; transform: translateY(0); }
   .agent-row:focus-visible { outline: none; border-color: var(--indigo); box-shadow: 0 0 0 2px rgba(99,102,241,0.25); }
   .agent-row.pinned { border-color: var(--indigo); background: var(--indigo-soft); }
   .agent-row.selected { border-color: rgba(245,158,11,0.5); background: rgba(245,158,11,0.08); }
@@ -1101,6 +1125,54 @@ const TOKEN = ${jsToken};
 const CHAT_ID = ${jsChatId};
 const MEETING_ID = ${jsMeetingId};
 const API = window.location.origin;
+
+function installAgentIdTooltip() {
+  let tooltip = null;
+  let active = null;
+  function getTooltip() {
+    if (tooltip) return tooltip;
+    tooltip = document.createElement('div');
+    tooltip.className = 'agent-id-tooltip-layer';
+    tooltip.setAttribute('role', 'tooltip');
+    document.body.appendChild(tooltip);
+    return tooltip;
+  }
+  function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+  function place(target) {
+    const text = target?.getAttribute('data-agent-id-tooltip');
+    if (!text) return;
+    const el = getTooltip();
+    el.textContent = text;
+    el.classList.add('show');
+    const tr = target.getBoundingClientRect();
+    const er = el.getBoundingClientRect();
+    const gap = 10;
+    const x = clamp(tr.left + tr.width / 2 - er.width / 2, 8, window.innerWidth - er.width - 8);
+    const y = tr.top >= er.height + gap + 8 ? tr.top - er.height - gap : tr.bottom + gap;
+    el.style.left = Math.round(x) + 'px';
+    el.style.top = Math.round(y) + 'px';
+  }
+  function closest(node) {
+    return node instanceof Element ? node.closest('[data-agent-id-tooltip]') : null;
+  }
+  document.addEventListener('pointerover', (e) => {
+    const target = closest(e.target);
+    if (!target) return;
+    active = target;
+    place(target);
+  });
+  document.addEventListener('pointerout', (e) => {
+    const target = closest(e.target);
+    if (!target || active !== target) return;
+    if (e.relatedTarget && target.contains(e.relatedTarget)) return;
+    active = null;
+    if (tooltip) tooltip.classList.remove('show');
+  });
+  document.addEventListener('pointermove', () => { if (active) place(active); });
+  window.addEventListener('scroll', () => { if (active) place(active); }, true);
+  window.addEventListener('resize', () => { if (active) place(active); });
+}
+installAgentIdTooltip();
 // Q/MEETING_Q carry chatId so the server can validate that the request
 // matches the meeting's chat_id (strict-validate guard). Server treats
 // the param as authoritative — a stale meetingId from another chat is

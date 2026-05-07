@@ -294,6 +294,7 @@ export function getWarRoomHtml(token: string, chatId: string, warroomPort: numbe
   }
   .agent-card::before {
     content: attr(data-agent-id-tooltip);
+    display: none;
     position: absolute;
     left: 50%;
     bottom: calc(100% + 8px);
@@ -313,6 +314,29 @@ export function getWarRoomHtml(token: string, chatId: string, warroomPort: numbe
     transition: opacity 90ms ease, transform 90ms ease;
   }
   .agent-card:hover::before { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .agent-id-tooltip-layer {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 2147483647;
+    max-width: 220px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.28);
+    background: #050505;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.72);
+    color: #fff;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(2px);
+    transition: opacity 80ms ease, transform 80ms ease;
+  }
+  .agent-id-tooltip-layer.show { opacity: 1; transform: translateY(0); }
   .agent-card.speaking {
     border-color: rgba(34, 197, 94, 0.4);
     background: rgba(34, 197, 94, 0.05);
@@ -824,6 +848,54 @@ const TOKEN = ${jsToken};
 const CHAT_ID = ${jsChatId};
 const WARROOM_PORT = ${warroomPort};
 const API_BASE = window.location.origin;
+
+function installAgentIdTooltip() {
+  var tooltip = null;
+  var active = null;
+  function getTooltip() {
+    if (tooltip) return tooltip;
+    tooltip = document.createElement('div');
+    tooltip.className = 'agent-id-tooltip-layer';
+    tooltip.setAttribute('role', 'tooltip');
+    document.body.appendChild(tooltip);
+    return tooltip;
+  }
+  function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+  function place(target) {
+    var text = target && target.getAttribute('data-agent-id-tooltip');
+    if (!text) return;
+    var el = getTooltip();
+    el.textContent = text;
+    el.classList.add('show');
+    var tr = target.getBoundingClientRect();
+    var er = el.getBoundingClientRect();
+    var gap = 10;
+    var x = clamp(tr.left + tr.width / 2 - er.width / 2, 8, window.innerWidth - er.width - 8);
+    var y = tr.top >= er.height + gap + 8 ? tr.top - er.height - gap : tr.bottom + gap;
+    el.style.left = Math.round(x) + 'px';
+    el.style.top = Math.round(y) + 'px';
+  }
+  function closest(node) {
+    return node && node.nodeType === 1 ? node.closest('[data-agent-id-tooltip]') : null;
+  }
+  document.addEventListener('pointerover', function(e) {
+    var target = closest(e.target);
+    if (!target) return;
+    active = target;
+    place(target);
+  });
+  document.addEventListener('pointerout', function(e) {
+    var target = closest(e.target);
+    if (!target || active !== target) return;
+    if (e.relatedTarget && target.contains(e.relatedTarget)) return;
+    active = null;
+    if (tooltip) tooltip.classList.remove('show');
+  });
+  document.addEventListener('pointermove', function() { if (active) place(active); });
+  window.addEventListener('scroll', function() { if (active) place(active); }, true);
+  window.addEventListener('resize', function() { if (active) place(active); });
+}
+installAgentIdTooltip();
 
 // The dashboard /ws/warroom proxy enforces the same DASHBOARD_TOKEN gate
 // Hono uses for HTTP routes. The WS upgrade path can't read Authorization

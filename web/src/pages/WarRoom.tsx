@@ -257,7 +257,7 @@ function VoicePane() {
               <span class="text-[var(--color-text-muted)] tabular-nums">{formatRelativeTime(m.started_at)}</span>
               <span class="text-[var(--color-text-faint)]">·</span>
               <span class="text-[var(--color-text-muted)]">{m.mode}</span>
-              {m.pinned_agent && (<><span class="text-[var(--color-text-faint)]">·</span><span class="text-[var(--color-text)]">{rosterName(m.pinned_agent)}</span></>)}
+              {m.pinned_agent && (<><span class="text-[var(--color-text-faint)]">·</span><span class="text-[var(--color-text)]" data-agent-id-tooltip={`Agent ID: ${m.pinned_agent}`} title={`Agent ID: ${m.pinned_agent}`}>{rosterName(m.pinned_agent)}</span></>)}
               <span class="text-[var(--color-text-faint)]">·</span>
               <span class="text-[var(--color-text-muted)] tabular-nums">{m.entry_count} turns</span>
               {m.duration_s !== null && (<><span class="text-[var(--color-text-faint)]">·</span><span class="text-[var(--color-text-muted)] tabular-nums">{Math.round(m.duration_s / 60)}m</span></>)}
@@ -275,6 +275,8 @@ function PinButton({ agent, label, active, onClick, disabled }: any) {
       type="button"
       onClick={onClick}
       disabled={disabled}
+      data-agent-id-tooltip={agent ? `Agent ID: ${agent.id}` : undefined}
+      title={agent ? `Agent ID: ${agent.id}` : undefined}
       class={[
         'inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[12px] border transition-colors disabled:opacity-40',
         active

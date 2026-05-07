@@ -194,7 +194,7 @@ export function Chat() {
           <>
             <TabBtn label="All" active={activeAgent === 'all'} onClick={() => setActiveAgent('all')} />
             {agentList.map((a) => (
-              <TabBtn key={a.id} label={a.name || agentDisplayName(a.id)} active={activeAgent === a.id} onClick={() => setActiveAgent(a.id)} live={a.running} />
+              <TabBtn key={a.id} label={a.name || agentDisplayName(a.id)} agentId={a.id} active={activeAgent === a.id} onClick={() => setActiveAgent(a.id)} live={a.running} />
             ))}
           </>
         }
@@ -310,11 +310,13 @@ function SessionBar({
   );
 }
 
-function TabBtn({ label, active, onClick, live }: { label: string; active: boolean; onClick: () => void; live?: boolean }) {
+function TabBtn({ label, agentId, active, onClick, live }: { label: string; agentId?: string; active: boolean; onClick: () => void; live?: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      data-agent-id-tooltip={agentId ? `Agent ID: ${agentId}` : undefined}
+      title={agentId ? `Agent ID: ${agentId}` : undefined}
       class={[
         'inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[12px] transition-colors',
         active
