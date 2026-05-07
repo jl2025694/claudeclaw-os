@@ -198,6 +198,7 @@ export function Agents() {
       <AgentDetail agent={detailAgent} onClose={() => setDetailAgent(null)} />
       <AgentSuggestionModal
         suggestion={openedSuggestion}
+        sourceAgentName={openedSuggestion ? agents.find((a) => a.id === openedSuggestion.from_agent)?.name : undefined}
         onClose={() => setOpenedSuggestion(null)}
         onActed={actOnSuggestion}
         onChange={suggestionsFetch.refresh}
@@ -277,7 +278,7 @@ function AgentCard({ agent, onChange, onOpen, suggestions, onOpenSuggestion }: {
             <AgentSuggestionBadge agentId={agent.id} suggestions={suggestions} onOpen={onOpenSuggestion} />
           </div>
           <div class="text-[10px] text-[var(--color-text-faint)] uppercase tracking-wider">
-            {agent.id}
+            {agent.running ? 'Live' : 'Offline'}
           </div>
         </div>
       </div>

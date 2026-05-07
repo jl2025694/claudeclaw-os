@@ -5,6 +5,7 @@ import { pushToast } from '@/lib/toasts';
 import { useFetch } from '@/lib/useFetch';
 import { describeCron } from '@/lib/cron';
 import { ScheduleBuilder } from '@/components/ScheduleBuilder';
+import { agentDisplayName } from '@/lib/agents';
 
 interface ScheduledTask {
   id: string;
@@ -152,9 +153,9 @@ export function EditTaskModal({ open, task, onClose, onSaved }: Props) {
           >
             {agentsFetch.data?.agents
               ? agentsFetch.data.agents.map((a) => (
-                  <option key={a.id} value={a.id}>@{a.id} {a.name && a.name !== a.id ? `· ${a.name}` : ''}</option>
+                  <option key={a.id} value={a.id}>{a.name || agentDisplayName(a.id)}</option>
                 ))
-              : <option value={agentId}>@{agentId}</option>}
+              : <option value={agentId}>{agentDisplayName(agentId)}</option>}
           </select>
         </div>
 

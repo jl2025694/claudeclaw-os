@@ -9,6 +9,7 @@ import { renderMarkdown } from '@/lib/markdown';
 import { formatCost, formatNumber } from '@/lib/format';
 import { showCosts } from '@/lib/theme';
 import { subscribeChatStream, chatStreamConnected, resetUnread } from '@/lib/chat-stream';
+import { agentDisplayName } from '@/lib/agents';
 
 interface Turn { role: 'user' | 'assistant'; content: string; source?: string; created_at?: number; photoUrl?: string; photoCaption?: string; }
 interface Agent { id: string; name: string; running: boolean; }
@@ -193,7 +194,7 @@ export function Chat() {
           <>
             <TabBtn label="All" active={activeAgent === 'all'} onClick={() => setActiveAgent('all')} />
             {agentList.map((a) => (
-              <TabBtn key={a.id} label={a.name || a.id} active={activeAgent === a.id} onClick={() => setActiveAgent(a.id)} live={a.running} />
+              <TabBtn key={a.id} label={a.name || agentDisplayName(a.id)} active={activeAgent === a.id} onClick={() => setActiveAgent(a.id)} live={a.running} />
             ))}
           </>
         }
@@ -204,7 +205,7 @@ export function Chat() {
         turnsToday={todayTurns}
         costToday={todayCost}
         model={activeAgent === 'all' ? health.data?.model : undefined}
-        agentLabel={activeAgentObj ? activeAgentObj.name || activeAgentObj.id : undefined}
+        agentLabel={activeAgentObj ? activeAgentObj.name || agentDisplayName(activeAgentObj.id) : undefined}
       />
 
       <div class="relative flex-1 min-h-0">

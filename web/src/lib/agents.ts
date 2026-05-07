@@ -1,9 +1,14 @@
 export const AGENT_NAMES: Record<string, string> = {
-  main: 'Ivonne - Main',
-  ops: 'Taylor - ops',
-  comms: 'Charlie - comms',
-  content: 'Jennifer - content',
-  research: 'Laura - research',
+  main: 'Ivonne',
+  ops: 'Taylor',
+  comms: 'Charlie',
+  content: 'Jennifer',
+  research: 'Laura',
+  llina_agent: 'Lina',
+  Camila_Agent: 'Camila',
+  Rodrigo_Agent: 'Rodrigo',
+  Jann_Agent: 'Jann',
+  carlos_agent: 'Carlos',
 };
 
 export function agentDisplayName(agentId: string): string {

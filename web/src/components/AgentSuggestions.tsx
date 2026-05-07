@@ -5,6 +5,7 @@ import { Pill } from '@/components/Pill';
 import { useFetch } from '@/lib/useFetch';
 import { apiPost } from '@/lib/api';
 import { pushToast } from '@/lib/toasts';
+import { agentDisplayName } from '@/lib/agents';
 
 export interface AgentSuggestion {
   id: number;
@@ -25,12 +26,13 @@ export function useAgentSuggestions() {
 
 interface DetailProps {
   suggestion: AgentSuggestion | null;
+  sourceAgentName?: string;
   onClose: () => void;
   onActed: (s: AgentSuggestion) => void; // open the wizard pre-filled
   onChange: () => void;                  // refresh the list after dismiss
 }
 
-export function AgentSuggestionModal({ suggestion, onClose, onActed, onChange }: DetailProps) {
+export function AgentSuggestionModal({ suggestion, sourceAgentName, onClose, onActed, onChange }: DetailProps) {
   const [busy, setBusy] = useState(false);
   if (!suggestion) return null;
 
@@ -54,6 +56,7 @@ export function AgentSuggestionModal({ suggestion, onClose, onActed, onChange }:
   }
 
   const share = suggestion.activity_share_pct ?? 0;
+  const fromLabel = sourceAgentName || agentDisplayName(suggestion.from_agent);
   return (
     <Modal
       open
@@ -82,7 +85,7 @@ export function AgentSuggestionModal({ suggestion, onClose, onActed, onChange }:
     >
       <div class="space-y-3">
         <div class="text-[12.5px] text-[var(--color-text-muted)] leading-relaxed">
-          <Pill tone="neutral">@{suggestion.from_agent}</Pill> is doing several things — splitting one off into a focused agent could clean up its scope.
+          <Pill tone="neutral">{fromLabel}</Pill> is doing several things — splitting one off into a focused agent could clean up its scope.
         </div>
 
         <div class="bg-[var(--color-elevated)] border border-[var(--color-border)] rounded-lg p-3 space-y-2">
@@ -92,7 +95,7 @@ export function AgentSuggestionModal({ suggestion, onClose, onActed, onChange }:
             <code class="text-[10.5px] text-[var(--color-text-faint)] font-mono">{suggestion.suggested_id}</code>
             {share > 0 && (
               <span class="ml-auto text-[10.5px] text-[var(--color-text-faint)] tabular-nums">
-                ~{share}% of @{suggestion.from_agent}'s activity
+                ~{share}% of {fromLabel}'s activity
               </span>
             )}
           </div>

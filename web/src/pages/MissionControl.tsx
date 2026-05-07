@@ -10,6 +10,7 @@ import { useFetch } from '@/lib/useFetch';
 import { apiPost, apiPatch, apiDelete, apiGet } from '@/lib/api';
 import { formatRelativeTime } from '@/lib/format';
 import { pushToast } from '@/lib/toasts';
+import { agentDisplayName } from '@/lib/agents';
 import {
   workspaceName,
   missionColumnOrder,
@@ -38,6 +39,10 @@ interface Agent { id: string; name: string; description: string; running: boolea
 
 const TERMINAL: MissionTask['status'][] = ['completed', 'failed', 'cancelled'];
 const DONE_VISIBLE_SECS = 30 * 60;
+
+function agentLabel(agentId: string, agents: Agent[]): string {
+  return agents.find((a) => a.id === agentId)?.name || agentDisplayName(agentId);
+}
 
 export function MissionControl() {
   const [location, navigate] = useLocation();
@@ -193,7 +198,7 @@ export function MissionControl() {
       <Drawer open={historyOpen} onClose={() => setHistoryOpen(false)} title="Task history">
         {/* Remount on each open so the fetch fires fresh and a previous
             error doesn't leave the drawer stuck on an empty state. */}
-        {historyOpen && <HistoryList />}
+        {historyOpen && <HistoryList agents={agents.data?.agents ?? []} />}
       </Drawer>
     </div>
   );
@@ -579,7 +584,7 @@ function InboxCard({
       pushToast({
         tone: 'success',
         title: 'Auto-assigned',
-        description: res.assigned_agent ? `Routed to @${res.assigned_agent}.` : 'Routed.',
+        description: res.assigned_agent ? `Routed to ${agentLabel(res.assigned_agent, agents)}.` : 'Routed.',
       });
     } catch (err: any) {
       pushToast({ tone: 'error', title: 'Auto-assign failed', description: err?.message || String(err), durationMs: 6000 });
@@ -591,7 +596,7 @@ function InboxCard({
     try {
       await apiPatch(`/api/mission/tasks/${task.id}`, { assigned_agent: agentId });
       onChange();
-      pushToast({ tone: 'success', title: 'Assigned', description: `Routed to @${agentId}.` });
+      pushToast({ tone: 'success', title: 'Assigned', description: `Routed to ${agentLabel(agentId, agents)}.` });
     } catch (err: any) {
       pushToast({ tone: 'error', title: 'Assign failed', description: err?.message || String(err), durationMs: 6000 });
     } finally { setBusy(null); }
@@ -996,7 +1001,7 @@ function CreateTaskModal({
 // MissionControl. That means the fetch always retries on open — fixes
 // the "drawer empty forever" symptom where a transient backend hiccup
 // at first paint left the list permanently blank with no error visible.
-function HistoryList() {
+function HistoryList({ agents }: { agents: Agent[] }) {
   const [items, setItems] = useState<MissionTask[]>([]);
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
@@ -1051,7 +1056,7 @@ function HistoryList() {
             <div class="flex items-center gap-2 mb-1">
               <Pill tone={t.status as any}>{t.status}</Pill>
               <span class="text-[10.5px] text-[var(--color-text-faint)] tabular-nums uppercase tracking-wider">{t.id.slice(0, 6)}</span>
-              {t.assigned_agent && <span class="text-[11px] text-[var(--color-text-muted)]">@{t.assigned_agent}</span>}
+              {t.assigned_agent && <span class="text-[11px] text-[var(--color-text-muted)]">{agentLabel(t.assigned_agent, agents)}</span>}
               <span class="ml-auto text-[10.5px] text-[var(--color-text-faint)]">
                 {formatRelativeTime(t.completed_at || t.created_at)}
               </span>

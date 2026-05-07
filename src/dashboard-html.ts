@@ -837,7 +837,11 @@ async function taskAction(id, action) {
 
 async function loadTasks() {
   try {
-    const data = await api('/api/tasks');
+    const [data, agentData] = await Promise.all([
+      api('/api/tasks'),
+      api('/api/agents').catch(function() { return { agents: [] }; }),
+    ]);
+    rememberAgentNames(agentData.agents || []);
     const c = document.getElementById('tasks-container');
     if (!data.tasks || data.tasks.length === 0) {
       c.innerHTML = '<div class="card text-gray-500 text-sm">No scheduled tasks</div>';
@@ -845,7 +849,7 @@ async function loadTasks() {
     }
     c.innerHTML = data.tasks.map(t => {
       const statusCls = t.status === 'running' ? 'pill-running' : t.status === 'active' ? 'pill-active' : 'pill-paused';
-      const agentBadge = t.agent_id && t.agent_id !== 'main' ? '<span class="text-xs text-gray-500 ml-2">[' + t.agent_id + ']</span>' : '';
+      const agentBadge = t.agent_id && t.agent_id !== 'main' ? '<span class="text-xs text-gray-500 ml-2">[' + escapeHtml(agentLabel(t.agent_id)) + ']</span>' : '';
       const lastStatusIcon = t.last_status === 'success' ? '<span class="last-success" title="Last run succeeded">&#10003;</span> ' : t.last_status === 'failed' ? '<span class="last-failed" title="Last run failed">&#10007;</span> ' : t.last_status === 'timeout' ? '<span class="last-timeout" title="Last run timed out">&#9200;</span> ' : '';
       const lastResult = t.last_result ? '<details class="mt-2"><summary class="text-xs text-gray-500">' + lastStatusIcon + 'Last result</summary><pre class="text-xs text-gray-400 mt-1 whitespace-pre-wrap break-words">' + escapeHtml(t.last_result) + '</pre></details>' : '';
       const runningInfo = t.status === 'running' && t.started_at ? '<span class="text-xs text-blue-400 ml-2">running for ' + elapsed(t.started_at) + '</span>' : '';
@@ -1217,14 +1221,14 @@ async function loadMeetAgentOptions() {
   if (!selAvatar && !selDaily) return;
   try {
     const data = await api('/api/agents');
+    rememberAgentNames(data.agents || []);
     const ids = new Set(['main']);
     if (data && Array.isArray(data.agents)) {
       for (const a of data.agents) if (a && a.id) ids.add(a.id);
     }
     const sorted = ['main', ...[...ids].filter(function(x){ return x !== 'main'; }).sort()];
     const optionsHtml = sorted.map(function(id) {
-      const label = id.charAt(0).toUpperCase() + id.slice(1);
-      return '<option value="' + id + '">' + label + '</option>';
+      return '<option value="' + id + '">' + escapeHtml(agentLabel(id)) + '</option>';
     }).join('');
     if (selAvatar) selAvatar.innerHTML = optionsHtml;
     if (selDaily) selDaily.innerHTML = optionsHtml;
@@ -1450,8 +1454,7 @@ async function refreshMeetSessions() {
       meta.style.cssText = 'min-width:0;flex:1';
       const title = document.createElement('div');
       title.style.cssText = 'font-size:12px;color:#fff;font-weight:600';
-      const agentLabel = (s.agent_id || '').charAt(0).toUpperCase() + (s.agent_id || '').slice(1);
-      title.textContent = agentLabel + ' · ' + (s.status === 'live' ? 'live' : s.status);
+      title.textContent = agentLabel(s.agent_id || '') + ' · ' + (s.status === 'live' ? 'live' : s.status);
       const sub = document.createElement('div');
       sub.style.cssText = 'font-size:10px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
       const urlShort = (s.meet_url || '').replace(MEET_URL_PREFIX, '');
@@ -1479,10 +1482,22 @@ setInterval(refreshMeetSessions, 5000);
 
 // ── Agent & Hive Mind ────────────────────────────────────────────────
 const AGENT_COLORS = { main: '#4f46e5', comms: '#0ea5e9', content: '#f59e0b', ops: '#10b981', research: '#8b5cf6' };
+const AGENT_NAMES = { main: 'Ivonne', comms: 'Charlie', content: 'Jennifer', ops: 'Taylor', research: 'Laura', llina_agent: 'Lina', Camila_Agent: 'Camila', Rodrigo_Agent: 'Rodrigo', Jann_Agent: 'Jann', carlos_agent: 'Carlos' };
+function rememberAgentNames(agents) {
+  if (!Array.isArray(agents)) return;
+  agents.forEach(function(a) {
+    if (a && a.id && a.name) AGENT_NAMES[a.id] = a.name;
+  });
+}
+function agentLabel(agentId) {
+  const label = AGENT_NAMES[agentId] || agentId || '';
+  return String(label).replace(/\s+-\s+[a-z0-9_-]+$/i, '');
+}
 
 async function loadAgents() {
   try {
     const data = await api('/api/agents');
+    rememberAgentNames(data.agents || []);
     const section = document.getElementById('agents-section');
     const container = document.getElementById('agents-container');
     // Always show agents section so "+ New Agent" button is accessible
@@ -1940,7 +1955,7 @@ async function cawCreate() {
     cawCreatedId = data.agentId;
 
     // Build summary
-    var summary = '<div style="margin-bottom:6px"><span style="color:#6b7280">Agent ID:</span> <span class="text-white">' + escapeHtml(data.agentId) + '</span></div>' +
+    var summary = '<div style="margin-bottom:6px"><span style="color:#6b7280">Agent:</span> <span class="text-white">' + escapeHtml(document.getElementById('caw-name').value.trim() || agentLabel(data.agentId)) + '</span></div>' +
       '<div style="margin-bottom:6px"><span style="color:#6b7280">Bot:</span> <span style="color:#6ee7b7">@' + escapeHtml(data.botInfo.username) + '</span></div>' +
       '<div style="margin-bottom:6px"><span style="color:#6b7280">Directory:</span> <span style="color:#9ca3af;font-size:11px">' + escapeHtml(data.agentDir) + '</span></div>' +
       '<div><span style="color:#6b7280">Token stored as:</span> <span style="color:#9ca3af">' + escapeHtml(data.envKey) + '</span></div>';
@@ -2005,7 +2020,11 @@ function copyToClipboard(text) {
 
 async function loadHiveMind() {
   try {
-    const data = await api('/api/hive-mind?limit=15');
+    const [data, agentData] = await Promise.all([
+      api('/api/hive-mind?limit=15'),
+      api('/api/agents').catch(function() { return { agents: [] }; }),
+    ]);
+    rememberAgentNames(agentData.agents || []);
     const section = document.getElementById('hive-section');
     const container = document.getElementById('hive-container');
     if (!data.entries || data.entries.length === 0) { section.style.display = 'none'; return; }
@@ -2019,7 +2038,7 @@ async function loadHiveMind() {
       const blurClass = isBlurred ? 'privacy-blur' : '';
       return '<tr>' +
         '<td class="col-time">' + time + '</td>' +
-        '<td class="col-agent" style="color:' + color + '">' + e.agent_id + '</td>' +
+        '<td class="col-agent" style="color:' + color + '">' + escapeHtml(agentLabel(e.agent_id)) + '</td>' +
         '<td class="col-action">' + escapeHtml(e.action) + '</td>' +
         '<td><div class="col-summary ' + blurClass + '" data-section="hive" data-idx="' + i + '" onclick="toggleItemBlur(this)">' + escapeHtml(e.summary) + '</div></td>' +
       '</tr>';
@@ -2191,7 +2210,7 @@ function renderMissionCard(t) {
     cancelled: '<span class="pill" style="background:#374151;color:#9ca3af">cancelled</span>',
   };
   const statusPill = statusMap[t.status] || '<span class="pill">' + t.status + '</span>';
-  const agentBadge = t.status === 'queued' ? '<span class="text-xs" style="color:' + color + '">@' + t.assigned_agent + '</span>' : '';
+  const agentBadge = t.status === 'queued' ? '<span class="text-xs" style="color:' + color + '">' + escapeHtml(agentLabel(t.assigned_agent)) + '</span>' : '';
   const timeAgo = elapsed(t.created_at);
   let durationStr = '';
   if (t.completed_at && t.started_at) {
@@ -2391,7 +2410,12 @@ async function openTaskHistory() {
 }
 
 async function loadHistoryPage() {
-  var data = await api('/api/mission/history?limit=' + HISTORY_PAGE + '&offset=' + historyOffset);
+  var pair = await Promise.all([
+    api('/api/mission/history?limit=' + HISTORY_PAGE + '&offset=' + historyOffset),
+    api('/api/agents').catch(function() { return { agents: [] }; }),
+  ]);
+  var data = pair[0];
+  rememberAgentNames((pair[1] && pair[1].agents) || []);
   historyTotal = data.total;
   document.getElementById('history-count').textContent = historyTotal + ' completed task' + (historyTotal === 1 ? '' : 's');
   var body = document.getElementById('history-body');
@@ -2418,7 +2442,7 @@ async function loadHistoryPage() {
           '<span class="pill ' + statusCls + '" style="' + statusStyle + '">' + t.status + '</span>' +
         '</div>' +
         '<div class="flex items-center gap-2 text-xs text-gray-500">' +
-          '<span style="color:' + color + '">@' + (t.assigned_agent || 'unassigned') + '</span>' +
+          '<span style="color:' + color + '">' + escapeHtml(t.assigned_agent ? agentLabel(t.assigned_agent) : 'Unassigned') + '</span>' +
           '<span>' + date + ' ' + time + '</span>' +
           (dur ? '<span>' + dur + '</span>' : '') +
         '</div>' +
@@ -2505,6 +2529,7 @@ async function loadAgentTabs() {
   try {
     const data = await api('/api/agents');
     chatAgents = data.agents || [];
+    rememberAgentNames(chatAgents);
     const container = document.getElementById('chat-agent-tabs');
     container.innerHTML = '';
     const allTab = document.createElement('button');
@@ -2518,7 +2543,7 @@ async function loadAgentTabs() {
       const dot = document.createElement('span');
       dot.className = 'agent-dot ' + (a.running ? 'live' : 'dead');
       tab.appendChild(dot);
-      tab.appendChild(document.createTextNode(a.id.charAt(0).toUpperCase() + a.id.slice(1)));
+      tab.appendChild(document.createTextNode(agentLabel(a.id)));
       tab.onclick = function() { switchAgentTab(a.id, this); };
       container.appendChild(tab);
     });

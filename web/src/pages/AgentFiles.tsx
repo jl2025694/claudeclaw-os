@@ -9,6 +9,7 @@ import { apiGet, apiPost, apiPut } from '@/lib/api';
 import { pushToast } from '@/lib/toasts';
 import { theme } from '@/lib/theme';
 import { formatRelativeTime } from '@/lib/format';
+import { agentDisplayName } from '@/lib/agents';
 
 // Monaco is ~400KB gzipped — lazy-load it so the dashboard's main bundle
 // stays small. The editor page is rarely visited; users who never edit
@@ -32,6 +33,7 @@ export function AgentFiles() {
   const [, params] = useRoute<{ id: string }>('/agents/:id/files');
   const [, navigate] = useLocation();
   const agentId = params?.id || '';
+  const [agentName, setAgentName] = useState('');
   const [tab, setTab] = useState<TabKey>('persona');
   const [files, setFiles] = useState<FilesResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,7 +63,11 @@ export function AgentFiles() {
     if (!agentId) return;
     setLoading(true); setError(null);
     try {
-      const data = await apiGet<FilesResponse>(`/api/agents/${encodeURIComponent(agentId)}/files`);
+      const [data, agentData] = await Promise.all([
+        apiGet<FilesResponse>(`/api/agents/${encodeURIComponent(agentId)}/files`),
+        apiGet<{ agents: { id: string; name?: string }[] }>('/api/agents').catch(() => ({ agents: [] })),
+      ]);
+      setAgentName(agentData.agents.find((a) => a.id === agentId)?.name || agentDisplayName(agentId));
       setFiles(data);
       setPersonaDraft(data.claude_md);
       setConfigDraft(data.agent_yaml);
@@ -110,7 +116,7 @@ export function AgentFiles() {
   }
 
   async function restart() {
-    if (!confirm(`Restart agent "${agentId}"? This will interrupt any in-flight tasks and reload its config.`)) return;
+    if (!confirm(`Restart agent "${agentName || agentDisplayName(agentId)}"? This will interrupt any in-flight tasks and reload its config.`)) return;
     setRestarting(true);
     try {
       await apiPost(`/api/agents/${encodeURIComponent(agentId)}/restart`);
@@ -136,7 +142,7 @@ export function AgentFiles() {
   return (
     <div class="flex flex-col h-full">
       <PageHeader
-        title={`Agent files · ${agentId}`}
+        title={`Agent files · ${agentName || agentDisplayName(agentId)}`}
         breadcrumb="Agents"
         tabs={
           <>
@@ -262,7 +268,7 @@ export function AgentFiles() {
         </>
       )}
 
-      <Drawer open={historyOpen} onClose={() => setHistoryOpen(false)} title={`History · ${agentId} · ${tab === 'persona' ? 'CLAUDE.md' : 'agent.yaml'}`}>
+      <Drawer open={historyOpen} onClose={() => setHistoryOpen(false)} title={`History · ${agentName || agentDisplayName(agentId)} · ${tab === 'persona' ? 'CLAUDE.md' : 'agent.yaml'}`}>
         {/* Remount on each open so the version list is fresh — and so a
             previous error doesn't leave the drawer stuck on stale data. */}
         {historyOpen && (

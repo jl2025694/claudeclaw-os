@@ -10,6 +10,7 @@ import { StandupConfigPane } from '@/pages/StandupConfig';
 import { useFetch } from '@/lib/useFetch';
 import { apiPost, dashboardToken, chatId, legacyUrl } from '@/lib/api';
 import { formatRelativeTime } from '@/lib/format';
+import { agentDisplayName } from '@/lib/agents';
 
 // 'voices' is the embedded voice configuration tab — used to be its own
 // page at /voices, now folded under War Room since it conceptually
@@ -172,6 +173,7 @@ function VoicePane() {
   const roster = useFetch<{ agents: RosterAgent[] }>('/api/warroom/agents', 60_000);
   const meetings = useFetch<{ meetings: VoiceMeeting[] }>('/api/warroom/meetings?limit=10', 60_000);
   const [busy, setBusy] = useState<string | null>(null);
+  const rosterName = (id: string) => roster.data?.agents?.find((a) => a.id === id)?.name || agentDisplayName(id);
 
   async function setPin(agent: string | null, mode: 'direct' | 'auto' = 'direct') {
     setBusy('pin');
@@ -255,7 +257,7 @@ function VoicePane() {
               <span class="text-[var(--color-text-muted)] tabular-nums">{formatRelativeTime(m.started_at)}</span>
               <span class="text-[var(--color-text-faint)]">·</span>
               <span class="text-[var(--color-text-muted)]">{m.mode}</span>
-              {m.pinned_agent && (<><span class="text-[var(--color-text-faint)]">·</span><span class="text-[var(--color-text)]">@{m.pinned_agent}</span></>)}
+              {m.pinned_agent && (<><span class="text-[var(--color-text-faint)]">·</span><span class="text-[var(--color-text)]">{rosterName(m.pinned_agent)}</span></>)}
               <span class="text-[var(--color-text-faint)]">·</span>
               <span class="text-[var(--color-text-muted)] tabular-nums">{m.entry_count} turns</span>
               {m.duration_s !== null && (<><span class="text-[var(--color-text-faint)]">·</span><span class="text-[var(--color-text-muted)] tabular-nums">{Math.round(m.duration_s / 60)}m</span></>)}
@@ -352,8 +354,10 @@ function TextPane() {
 
 function MeetPane() {
   const sessions = useFetch<{ active: MeetSession[]; recent: MeetSession[] }>('/api/meet/sessions', 5_000);
+  const agents = useFetch<{ agents: { id: string; name?: string }[] }>('/api/agents', 60_000);
   const active = sessions.data?.active ?? [];
   const recent = sessions.data?.recent ?? [];
+  const agentName = (id: string) => agents.data?.agents?.find((a) => a.id === id)?.name || agentDisplayName(id);
 
   return (
     <div class="p-6 space-y-5">
@@ -366,7 +370,7 @@ function MeetPane() {
           <div class="text-[11.5px] text-[var(--color-text-faint)]">No active video meetings.</div>
         )}
         <div class="space-y-1.5">
-          {active.map((s) => <MeetRow key={s.id} session={s} live onChange={sessions.refresh} />)}
+          {active.map((s) => <MeetRow key={s.id} session={s} agentName={agentName(s.agent_id)} live onChange={sessions.refresh} />)}
         </div>
       </section>
 
@@ -376,7 +380,7 @@ function MeetPane() {
           <div class="text-[11.5px] text-[var(--color-text-faint)]">None.</div>
         )}
         <div class="space-y-1.5">
-          {recent.map((s) => <MeetRow key={s.id} session={s} live={false} onChange={sessions.refresh} />)}
+          {recent.map((s) => <MeetRow key={s.id} session={s} agentName={agentName(s.agent_id)} live={false} onChange={sessions.refresh} />)}
         </div>
       </section>
     </div>
@@ -541,7 +545,7 @@ function Field({ label, children }: { label: string; children: any }) {
   );
 }
 
-function MeetRow({ session, live, onChange }: { session: MeetSession; live: boolean; onChange: () => void }) {
+function MeetRow({ session, agentName, live, onChange }: { session: MeetSession; agentName: string; live: boolean; onChange: () => void }) {
   const [busy, setBusy] = useState(false);
   async function leave() {
     setBusy(true);
@@ -551,9 +555,10 @@ function MeetRow({ session, live, onChange }: { session: MeetSession; live: bool
   }
   return (
     <div class="flex items-center gap-3 bg-[var(--color-card)] border border-[var(--color-border)] rounded p-3 text-[11.5px]">
-      <AgentAvatar agentId={session.agent_id} size={24} running={live} />
+      <AgentAvatar agentId={session.agent_id} name={agentName} size={24} running={live} />
       <div class="flex-1 min-w-0">
-        <div class="text-[12px] text-[var(--color-text)] truncate">{session.meet_url}</div>
+        <div class="text-[12px] text-[var(--color-text)] truncate">{agentName}</div>
+        <div class="text-[10px] text-[var(--color-text-muted)] truncate">{session.meet_url}</div>
         <div class="text-[10px] text-[var(--color-text-faint)]">{session.provider} · {session.status} · {formatRelativeTime(session.created_at)}</div>
       </div>
       {live && (

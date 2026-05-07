@@ -130,9 +130,9 @@ export function VoicesPane({ embedded }: VoicesPaneProps) {
                       : 'bg-[var(--color-card)] border-[var(--color-border)]',
                   ].join(' ')}
                 >
-                  <AgentAvatar agentId={r.agent} size={32} running />
+                  <AgentAvatar agentId={r.agent} name={r.name} size={32} running />
                   <div class="flex-1 min-w-0">
-                    <div class="text-[13.5px] text-[var(--color-text)] font-medium truncate">{r.agent}</div>
+                    <div class="text-[13.5px] text-[var(--color-text)] font-medium truncate">{r.name}</div>
                     {isDirty && <div class="text-[10.5px] text-[var(--color-accent)]">modified</div>}
                   </div>
                   <select
