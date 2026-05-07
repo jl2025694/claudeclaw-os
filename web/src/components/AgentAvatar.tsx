@@ -39,11 +39,13 @@ export function AgentAvatar({ agentId, name, size = 36, running, cacheBust }: Pr
     .toUpperCase();
 
   const ringColor = running ? 'var(--color-status-done)' : 'var(--color-text-faint)';
+  const tooltip = `Agent ID: ${agentId}`;
 
   if (!imageOk) {
     return (
       <div
         class="rounded-full flex items-center justify-center font-semibold shrink-0"
+        title={tooltip}
         style={{
           width: size + 'px',
           height: size + 'px',
@@ -63,6 +65,7 @@ export function AgentAvatar({ agentId, name, size = 36, running, cacheBust }: Pr
     <img
       src={`/api/agents/${encodeURIComponent(agentId)}/avatar?token=${encodeURIComponent(dashboardToken)}${cacheBustParam}`}
       alt={name || agentId}
+      title={tooltip}
       class="rounded-full shrink-0 object-cover"
       style={{
         width: size + 'px',

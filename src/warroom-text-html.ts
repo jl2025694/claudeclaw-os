@@ -1166,6 +1166,7 @@ function renderRoster() {
     row.className = 'agent-row';
     row.id = 'agent-row-' + esc(a.id);
     row.setAttribute('data-agent', a.id);
+    row.setAttribute('title', 'Agent ID: ' + a.id);
     row.setAttribute('role', 'listitem');
 
     const av = document.createElement('div');

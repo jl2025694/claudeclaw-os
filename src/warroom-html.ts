@@ -1545,6 +1545,7 @@ function loadAgentCards() {
         card.className = 'agent-card';
         card.id = 'agent-' + agent.id;
         card.setAttribute('data-agent', agent.id);
+        card.setAttribute('title', 'Agent ID: ' + agent.id);
         card.onclick = function(){ togglePin(agent.id); };
         var avatarV = agent.avatar_etag ? ('&v=' + encodeURIComponent(agent.avatar_etag)) : '';
         card.innerHTML = '<div class="agent-avatar"><img src="/api/agents/' + encodeURIComponent(agent.id) + '/avatar?token=' + encodeURIComponent(TOKEN) + avatarV + '" alt="' + safeName + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=\\'none\\'"></div>'

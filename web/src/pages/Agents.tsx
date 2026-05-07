@@ -265,6 +265,7 @@ function AgentCard({ agent, onChange, onOpen, suggestions, onOpenSuggestion }: {
   return (
     <div
       class="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-4 hover:border-[var(--color-border-strong)] transition-colors cursor-pointer"
+      title={`Agent ID: ${agent.id}`}
       onClick={onOpen}
     >
       <div class="flex items-start gap-3 mb-3">

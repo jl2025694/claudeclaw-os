@@ -1529,7 +1529,7 @@ async function loadAgents() {
       const avatarImg = '<img src="' + avatarUrl + '" alt="" ' +
         'style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid ' + color + ';flex-shrink:0;background:#0a0a0a" ' +
         'onerror="this.remove()">';
-      return '<div class="card clickable-card" style="min-width:150px;flex:1;max-width:220px;border-left:3px solid ' + color + '" data-agent="' + a.id + '" onclick="toggleAgentDetail(this.dataset.agent)">' +
+      return '<div class="card clickable-card" style="min-width:150px;flex:1;max-width:220px;border-left:3px solid ' + color + '" data-agent="' + a.id + '" title="Agent ID: ' + escapeHtml(a.id) + '" onclick="toggleAgentDetail(this.dataset.agent)">' +
         '<div style="display:flex;gap:10px;align-items:flex-start">' +
           avatarImg +
           '<div style="flex:1;min-width:0">' +
