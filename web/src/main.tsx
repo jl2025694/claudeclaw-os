@@ -3,6 +3,7 @@ import { App } from './App';
 import './styles/main.css';
 import './lib/theme';       // initializes the theme effect on import
 import './lib/api';         // initializes the dashboard token cache from URL
+import './lib/agent-id-tooltip';
 import { startChatStream } from './lib/chat-stream';
 
 // Single chat SSE for the lifetime of the page. Any view subscribes and

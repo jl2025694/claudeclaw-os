@@ -137,17 +137,11 @@ input, textarea, select {
   font-weight: 500;
 }
 
-.agent-id-tooltip {
-  position: relative;
-}
-
-.agent-id-tooltip::after {
-  content: attr(data-agent-id-tooltip);
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 8px);
-  transform: translateX(-50%) translateY(4px);
-  z-index: 60;
+.agent-id-tooltip-layer {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 2147483647;
   max-width: 220px;
   padding: 6px 10px;
   border-radius: 6px;
@@ -162,16 +156,13 @@ input, textarea, select {
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 90ms ease, transform 90ms ease;
+  transform: translateY(2px);
+  transition: opacity 80ms ease, transform 80ms ease;
 }
 
-.agent-id-tooltip:hover::after {
+.agent-id-tooltip-layer.show {
   opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-.agent-id-tooltip:has(.agent-avatar-id-tooltip:hover)::after {
-  opacity: 0;
+  transform: translateY(0);
 }
 
 /* Chat bubble markdown rendering */
