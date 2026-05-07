@@ -61,6 +61,12 @@ describe('obsidian', () => {
     expect(result).toContain('FolderB/');
   });
 
+  it('scans markdown files in nested folders', () => {
+    writeNote('Projects/Nested', 'Deep Note.md', 'Nested context about Paperclip routing.');
+    const result = buildObsidianContext({ vault: tmpDir, folders: ['Projects'] }, 'paperclip routing');
+    expect(result).toContain('Projects/Nested/Deep Note');
+  });
+
   it('includes relevant note snippets when query matches note content', () => {
     writeNote('Research', 'n8n.md', '# N8N\nUse webhook nodes for WhatsApp routing.');
     const result = buildObsidianContext({ vault: tmpDir, folders: ['Research'] }, 'como conecto whatsapp con n8n');

@@ -93,24 +93,14 @@ function cacheKeyFor(config: ObsidianConfig): string {
 }
 
 function scanFolders(config: ObsidianConfig): ObsidianNote[] {
-  const allFolders = [...config.folders, ...(config.readOnly ?? [])];
+  const allFolders = [...new Set([...config.folders, ...(config.readOnly ?? [])])];
   const notes: ObsidianNote[] = [];
 
   for (const folder of allFolders) {
     const folderPath = path.join(config.vault, folder);
     if (!fs.existsSync(folderPath)) continue;
 
-    let entries: fs.Dirent[];
-    try {
-      entries = fs.readdirSync(folderPath, { withFileTypes: true });
-    } catch {
-      continue;
-    }
-
-    for (const entry of entries) {
-      if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
-
-      const filePath = path.join(folderPath, entry.name);
+    for (const filePath of listMarkdownFiles(folderPath)) {
       let content: string;
       try {
         content = fs.readFileSync(filePath, 'utf-8');
@@ -131,12 +121,38 @@ function scanFolders(config: ObsidianConfig): ObsidianNote[] {
       }
 
       const text = normalizeNoteText(content);
-      const title = entry.name.replace(/\.md$/, '');
-      if (openTasks.length > 0 || text) notes.push({ title, folder, openTasks, text });
+      const relativePath = path.relative(config.vault, filePath);
+      const title = path.basename(filePath).replace(/\.md$/, '');
+      const noteFolder = path.dirname(relativePath);
+      if (openTasks.length > 0 || text) notes.push({ title, folder: noteFolder, openTasks, text });
     }
   }
 
   return notes;
+}
+
+function listMarkdownFiles(root: string): string[] {
+  const files: string[] = [];
+  const stack = [root];
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(current, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      if (entry.name.startsWith('.')) continue;
+      const entryPath = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(entryPath);
+      } else if (entry.isFile() && entry.name.endsWith('.md')) {
+        files.push(entryPath);
+      }
+    }
+  }
+  return files.sort((a, b) => a.localeCompare(b));
 }
 
 function normalizeNoteText(content: string): string {
