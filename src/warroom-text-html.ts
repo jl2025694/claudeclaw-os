@@ -1509,8 +1509,12 @@ function applyRosterState() {
   if (pinnedAgent) {
     info.style.display = '';
     infoAgent.textContent = rosterById.get(pinnedAgent)?.name || pinnedAgent;
+    infoAgent.setAttribute('data-agent-id-tooltip', 'Agent ID: ' + pinnedAgent);
+    infoAgent.setAttribute('title', 'Agent ID: ' + pinnedAgent);
   } else {
     info.style.display = 'none';
+    infoAgent.removeAttribute('data-agent-id-tooltip');
+    infoAgent.removeAttribute('title');
   }
 }
 
@@ -1730,6 +1734,8 @@ function appendAgentBubble(turnId, agentId, role, createdAt) {
   const nm = document.createElement('span');
   nm.className = 'name';
   nm.textContent = rosterById.get(agentId)?.name || agentId;
+  nm.setAttribute('data-agent-id-tooltip', 'Agent ID: ' + agentId);
+  nm.setAttribute('title', 'Agent ID: ' + agentId);
   const ts = document.createElement('span');
   ts.className = 'ts';
   // History-loaded bubbles pass the original createdAt so the timestamp
@@ -2755,6 +2761,8 @@ function renderMentionPopup() {
     row.className = 'mention-item' + (i === mentionIndex ? ' active' : '');
     row.setAttribute('role', 'option');
     row.setAttribute('aria-selected', i === mentionIndex ? 'true' : 'false');
+    row.setAttribute('data-agent-id-tooltip', 'Agent ID: ' + a.id);
+    row.setAttribute('title', 'Agent ID: ' + a.id);
     row.dataset.idx = String(i);
     const av = document.createElement('div');
     av.className = 'm-avatar';

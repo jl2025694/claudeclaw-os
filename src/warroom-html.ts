@@ -748,23 +748,23 @@ export function getWarRoomHtml(token: string, chatId: string, warroomPort: numbe
   <div class="table-wrap">
     <div class="table-surface"></div>
     <div class="table-rim"></div>
-    <div class="stage-avatar" data-agent="main" style="--seat-x:0px;--seat-y:-150px">
+    <div class="stage-avatar" data-agent="main" data-agent-id-tooltip="Agent ID: main" title="Agent ID: main" style="--seat-x:0px;--seat-y:-150px">
       <img src="/api/agents/main/avatar?token=${safeToken}" alt="Ivonne">
       <div class="stage-nameplate">IVONNE</div>
     </div>
-    <div class="stage-avatar" data-agent="research" style="--seat-x:-250px;--seat-y:-40px">
+    <div class="stage-avatar" data-agent="research" data-agent-id-tooltip="Agent ID: research" title="Agent ID: research" style="--seat-x:-250px;--seat-y:-40px">
       <img src="/api/agents/research/avatar?token=${safeToken}" alt="Research">
       <div class="stage-nameplate">RESEARCH</div>
     </div>
-    <div class="stage-avatar" data-agent="comms" style="--seat-x:250px;--seat-y:-40px">
+    <div class="stage-avatar" data-agent="comms" data-agent-id-tooltip="Agent ID: comms" title="Agent ID: comms" style="--seat-x:250px;--seat-y:-40px">
       <img src="/api/agents/comms/avatar?token=${safeToken}" alt="Comms">
       <div class="stage-nameplate">COMMS</div>
     </div>
-    <div class="stage-avatar" data-agent="content" style="--seat-x:-165px;--seat-y:135px">
+    <div class="stage-avatar" data-agent="content" data-agent-id-tooltip="Agent ID: content" title="Agent ID: content" style="--seat-x:-165px;--seat-y:135px">
       <img src="/api/agents/content/avatar?token=${safeToken}" alt="Content">
       <div class="stage-nameplate">CONTENT</div>
     </div>
-    <div class="stage-avatar" data-agent="ops" style="--seat-x:165px;--seat-y:135px">
+    <div class="stage-avatar" data-agent="ops" data-agent-id-tooltip="Agent ID: ops" title="Agent ID: ops" style="--seat-x:165px;--seat-y:135px">
       <img src="/api/agents/ops/avatar?token=${safeToken}" alt="Ops">
       <div class="stage-nameplate">OPS</div>
     </div>
@@ -1281,6 +1281,10 @@ function addTranscriptEntry(speaker, text, agentId) {
   var speakerClass = speaker === 'You' ? 'user' : (speaker === 'system' ? 'system' : 'agent');
   speakerEl.className = 'transcript-speaker ' + speakerClass;
   speakerEl.textContent = speaker === 'system' ? '' : speaker;
+  if (agentId) {
+    speakerEl.setAttribute('data-agent-id-tooltip', 'Agent ID: ' + agentId);
+    speakerEl.setAttribute('title', 'Agent ID: ' + agentId);
+  }
 
   var textEl = document.createElement('div');
   textEl.className = 'transcript-text' + (speaker === 'system' ? ' system-text' : '');
