@@ -205,6 +205,7 @@ export function getWarRoomTextHtml(token: string, chatId: string, meetingId: str
      than the old horizontal row. The status line uses hive_mind to
      show what each agent last did; cross-fades on update. */
   .agent-row {
+    position: relative;
     display: flex; flex-direction: column; align-items: center; gap: 8px;
     padding: 14px 10px 12px;
     border-radius: 16px;
@@ -218,6 +219,26 @@ export function getWarRoomTextHtml(token: string, chatId: string, meetingId: str
     width: 100%;
   }
   .agent-row:hover { background: var(--bg-elev-2); border-color: var(--border-strong); transform: translateY(-1px); }
+  .agent-row::after {
+    content: attr(data-agent-id-tooltip);
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 8px);
+    transform: translateX(-50%) translateY(4px);
+    z-index: 20;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-elev-2);
+    color: var(--text);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 10px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 90ms ease, transform 90ms ease;
+  }
+  .agent-row:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
   .agent-row:focus-visible { outline: none; border-color: var(--indigo); box-shadow: 0 0 0 2px rgba(99,102,241,0.25); }
   .agent-row.pinned { border-color: var(--indigo); background: var(--indigo-soft); }
   .agent-row.selected { border-color: rgba(245,158,11,0.5); background: rgba(245,158,11,0.08); }
@@ -1166,6 +1187,7 @@ function renderRoster() {
     row.className = 'agent-row';
     row.id = 'agent-row-' + esc(a.id);
     row.setAttribute('data-agent', a.id);
+    row.setAttribute('data-agent-id-tooltip', 'Agent ID: ' + a.id);
     row.setAttribute('title', 'Agent ID: ' + a.id);
     row.setAttribute('role', 'listitem');
 

@@ -264,7 +264,8 @@ function AgentCard({ agent, onChange, onOpen, suggestions, onOpenSuggestion }: {
 
   return (
     <div
-      class="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-4 hover:border-[var(--color-border-strong)] transition-colors cursor-pointer"
+      class="agent-id-tooltip bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-4 hover:border-[var(--color-border-strong)] transition-colors cursor-pointer"
+      data-agent-id-tooltip={`Agent ID: ${agent.id}`}
       title={`Agent ID: ${agent.id}`}
       onClick={onOpen}
     >

@@ -292,6 +292,26 @@ export function getWarRoomHtml(token: string, chatId: string, warroomPort: numbe
     background: rgba(255,255,255,0.04);
     border-color: rgba(255,255,255,0.08);
   }
+  .agent-card::before {
+    content: attr(data-agent-id-tooltip);
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 8px);
+    transform: translateX(-50%) translateY(4px);
+    z-index: 30;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: #18181b;
+    color: #e5e7eb;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 10px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 90ms ease, transform 90ms ease;
+  }
+  .agent-card:hover::before { opacity: 1; transform: translateX(-50%) translateY(0); }
   .agent-card.speaking {
     border-color: rgba(34, 197, 94, 0.4);
     background: rgba(34, 197, 94, 0.05);
@@ -1545,6 +1565,7 @@ function loadAgentCards() {
         card.className = 'agent-card';
         card.id = 'agent-' + agent.id;
         card.setAttribute('data-agent', agent.id);
+        card.setAttribute('data-agent-id-tooltip', 'Agent ID: ' + agent.id);
         card.setAttribute('title', 'Agent ID: ' + agent.id);
         card.onclick = function(){ togglePin(agent.id); };
         var avatarV = agent.avatar_etag ? ('&v=' + encodeURIComponent(agent.avatar_etag)) : '';

@@ -83,6 +83,27 @@ const WARROOM_ENABLED = warroomEnabled;
   .salience-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; flex-shrink: 0; }
   .clickable-card { cursor: pointer; transition: border-color 0.15s; }
   .clickable-card:hover, .clickable-card:active { border-color: #444; }
+  .agent-id-tooltip { position: relative; }
+  .agent-id-tooltip::after {
+    content: attr(data-agent-id-tooltip);
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 8px);
+    transform: translateX(-50%) translateY(4px);
+    z-index: 40;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid #374151;
+    background: #111827;
+    color: #e5e7eb;
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 90ms ease, transform 90ms ease;
+  }
+  .agent-id-tooltip:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
   /* Info tooltips */
   .info-tip { position: relative; display: inline-block; vertical-align: middle; margin-left: 6px; }
   .info-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: #333; color: #888; font-size: 11px; cursor: pointer; user-select: none; line-height: 1; transition: background 0.15s, color 0.15s; }
@@ -1529,7 +1550,7 @@ async function loadAgents() {
       const avatarImg = '<img src="' + avatarUrl + '" alt="" ' +
         'style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid ' + color + ';flex-shrink:0;background:#0a0a0a" ' +
         'onerror="this.remove()">';
-      return '<div class="card clickable-card" style="min-width:150px;flex:1;max-width:220px;border-left:3px solid ' + color + '" data-agent="' + a.id + '" title="Agent ID: ' + escapeHtml(a.id) + '" onclick="toggleAgentDetail(this.dataset.agent)">' +
+      return '<div class="card clickable-card agent-id-tooltip" style="min-width:150px;flex:1;max-width:220px;border-left:3px solid ' + color + '" data-agent="' + a.id + '" data-agent-id-tooltip="Agent ID: ' + escapeHtml(a.id) + '" title="Agent ID: ' + escapeHtml(a.id) + '" onclick="toggleAgentDetail(this.dataset.agent)">' +
         '<div style="display:flex;gap:10px;align-items:flex-start">' +
           avatarImg +
           '<div style="flex:1;min-width:0">' +
