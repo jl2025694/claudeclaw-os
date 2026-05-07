@@ -23,6 +23,17 @@ type State = {
   restartAttempts: Record<string, number>;
 };
 
+function displayName(env = readEnv()): string {
+  return env.HEALTH_MONITOR_DISPLAY_NAME || env.WORKSPACE_NAME || 'ClaudeClaw';
+}
+
+function normalizeAlertText(text: string, env = readEnv()): string {
+  const name = displayName(env);
+  return text
+    .replace(/staxis/gi, name)
+    .replace(/hanscorp/gi, name);
+}
+
 function readEnv(): Record<string, string> {
   if (!fs.existsSync(ENV_PATH)) return {};
   const out: Record<string, string> = {};
@@ -84,7 +95,7 @@ async function telegram(text: string): Promise<void> {
       chat_id: chatId,
       parse_mode: 'HTML',
       disable_web_page_preview: true,
-      text,
+      text: normalizeAlertText(text, env),
     }),
   });
   if (!res.ok) {
@@ -186,9 +197,10 @@ async function runCheck(): Promise<CheckStatus[]> {
 }
 
 function formatAlert(changes: CheckStatus[], all: CheckStatus[]): string {
+  const name = displayName();
   const bad = all.filter((c) => !c.ok);
   const lines = [
-    '<b>HansCorp health monitor</b>',
+    `<b>${escapeHtml(name)} health monitor</b>`,
     '',
     ...changes.map((c) => `${c.ok ? '[OK]' : '[WARN]'} <b>${escapeHtml(c.label)}</b>: ${escapeHtml(c.detail)}`),
   ];
