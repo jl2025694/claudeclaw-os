@@ -9,6 +9,7 @@ import { useDebouncedValue } from '@/lib/useDebounce';
 import { formatRelativeTime, safeJsonArray } from '@/lib/format';
 import { chatId, apiGet } from '@/lib/api';
 import { privacyBlur } from '@/lib/privacy';
+import { agentDisplayName } from '@/lib/agents';
 
 type SortMode = 'importance' | 'salience' | 'recent';
 
@@ -44,6 +45,7 @@ export function Memories() {
   const [error, setError] = useState<string | null>(null);
   const [pinnedOpen, setPinnedOpen] = useState(false);
   const [insightsOpen, setInsightsOpen] = useState(false);
+  const agents = useFetch<{ agents: { id: string; name?: string }[] }>('/api/agents', 60_000);
 
   const dq = useDebouncedValue(query, 200);
 
@@ -85,6 +87,10 @@ export function Memories() {
       if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
+  }
+
+  function agentName(id: string): string {
+    return agents.data?.agents?.find((a) => a.id === id)?.name || agentDisplayName(id);
   }
 
   return (
@@ -157,7 +163,7 @@ export function Memories() {
       {filtered.length > 0 && (
         <div class="flex-1 overflow-y-auto">
           {filtered.map((m) => (
-            <MemoryRow key={m.id} memory={m} expanded={expanded.has(m.id)} onToggle={() => toggle(m.id)} />
+            <MemoryRow key={m.id} memory={m} agentName={agentName(m.agent_id)} expanded={expanded.has(m.id)} onToggle={() => toggle(m.id)} />
           ))}
           {!dq && offset < total && (
             <button
@@ -186,6 +192,8 @@ function PinnedDrawer() {
   const { data, loading, error } = useFetch<{ memories: Memory[] }>(
     `/api/memories/pinned?chatId=${encodeURIComponent(chatId)}`,
   );
+  const agents = useFetch<{ agents: { id: string; name?: string }[] }>('/api/agents', 60_000);
+  const agentName = (id: string) => agents.data?.agents?.find((a) => a.id === id)?.name || agentDisplayName(id);
   if (loading) return <PageState loading />;
   if (error) return <PageState error={error} />;
   const list = data?.memories ?? [];
@@ -196,6 +204,13 @@ function PinnedDrawer() {
       <div class="space-y-2">
         {list.map((m) => (
           <div key={m.id} class="bg-[var(--color-elevated)] border border-[var(--color-border)] rounded p-3">
+            <div
+              class="inline-flex mb-2 font-mono text-[10px] text-[var(--color-text-muted)] bg-[var(--color-card)] border border-[var(--color-border)] px-1.5 py-0.5 rounded"
+              data-agent-id-tooltip={`Agent ID: ${m.agent_id}`}
+              title={`Agent ID: ${m.agent_id}`}
+            >
+              {agentName(m.agent_id)}
+            </div>
             <div class="text-[12.5px] text-[var(--color-text)] leading-snug">{m.summary}</div>
             <div class="flex flex-wrap gap-1 mt-1.5">
               {safeJsonArray<string>(m.topics).map((t, i) => (
@@ -237,7 +252,7 @@ function InsightsDrawer() {
   );
 }
 
-function MemoryRow({ memory, expanded, onToggle }: { memory: Memory; expanded: boolean; onToggle: () => void }) {
+function MemoryRow({ memory, agentName, expanded, onToggle }: { memory: Memory; agentName: string; expanded: boolean; onToggle: () => void }) {
   const topics = safeJsonArray<string>(memory.topics);
   const importanceColor =
     memory.importance >= 0.8 ? 'var(--color-priority-high)'
@@ -266,6 +281,16 @@ function MemoryRow({ memory, expanded, onToggle }: { memory: Memory; expanded: b
           class={'mt-1 shrink-0 text-[var(--color-text-faint)] transition-transform ' + (expanded ? 'rotate-90' : '')}
         />
         <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 mb-1">
+            <span
+              class="font-mono text-[10px] text-[var(--color-text-muted)] bg-[var(--color-elevated)] border border-[var(--color-border)] px-1.5 py-0.5 rounded"
+              data-agent-id-tooltip={`Agent ID: ${memory.agent_id}`}
+              title={`Agent ID: ${memory.agent_id}`}
+            >
+              {agentName}
+            </span>
+            <span class="text-[10px] text-[var(--color-text-faint)]">{formatRelativeTime(memory.created_at)}</span>
+          </div>
           <div class={'text-[13px] text-[var(--color-text)] leading-snug ' + (expanded ? '' : 'truncate')}>
             <span class={blurClass} onClick={clickBlurSpan}>{memory.summary}</span>
             {memory.pinned === 1 && <Pin size={11} class="inline ml-1.5 text-[var(--color-accent)]" />}

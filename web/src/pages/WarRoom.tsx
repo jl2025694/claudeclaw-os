@@ -457,7 +457,7 @@ function DispatchForm({ onChange }: { onChange: () => void }) {
                 class="w-full bg-[var(--color-elevated)] border border-[var(--color-border)] rounded px-2.5 py-1.5 text-[12.5px] outline-none focus:border-[var(--color-accent)]"
               >
                 {list.map((a) => (
-                  <option key={a.id} value={a.id}>{a.name || a.id}{a.running ? '' : ' (offline)'}</option>
+                  <option key={a.id} value={a.id}>{a.name || agentDisplayName(a.id)}{a.running ? '' : ' (offline)'}</option>
                 ))}
               </select>
             </Field>
@@ -559,7 +559,13 @@ function MeetRow({ session, agentName, live, onChange }: { session: MeetSession;
     <div class="flex items-center gap-3 bg-[var(--color-card)] border border-[var(--color-border)] rounded p-3 text-[11.5px]">
       <AgentAvatar agentId={session.agent_id} name={agentName} size={24} running={live} />
       <div class="flex-1 min-w-0">
-        <div class="text-[12px] text-[var(--color-text)] truncate">{agentName}</div>
+        <div
+          class="text-[12px] text-[var(--color-text)] truncate"
+          data-agent-id-tooltip={`Agent ID: ${session.agent_id}`}
+          title={`Agent ID: ${session.agent_id}`}
+        >
+          {agentName}
+        </div>
         <div class="text-[10px] text-[var(--color-text-muted)] truncate">{session.meet_url}</div>
         <div class="text-[10px] text-[var(--color-text-faint)]">{session.provider} · {session.status} · {formatRelativeTime(session.created_at)}</div>
       </div>
