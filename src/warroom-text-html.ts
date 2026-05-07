@@ -3138,7 +3138,7 @@ async function runWarmupIntro(rosterForIntro) {
 function getRoster() {
   if (roster && roster.length) return roster;
   return [
-    { id: 'main', name: 'Main' },
+    { id: 'main', name: 'Ivonne' },
     { id: 'research', name: 'Research' },
     { id: 'comms', name: 'Comms' },
     { id: 'content', name: 'Content' },

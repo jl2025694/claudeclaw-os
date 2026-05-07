@@ -704,8 +704,8 @@ export function getWarRoomHtml(token: string, chatId: string, warroomPort: numbe
     <div class="table-surface"></div>
     <div class="table-rim"></div>
     <div class="stage-avatar" data-agent="main" style="--seat-x:0px;--seat-y:-150px">
-      <img src="/api/agents/main/avatar?token=${safeToken}" alt="Main">
-      <div class="stage-nameplate">MAIN</div>
+      <img src="/api/agents/main/avatar?token=${safeToken}" alt="Ivonne">
+      <div class="stage-nameplate">IVONNE</div>
     </div>
     <div class="stage-avatar" data-agent="research" style="--seat-x:-250px;--seat-y:-40px">
       <img src="/api/agents/research/avatar?token=${safeToken}" alt="Research">
@@ -1316,7 +1316,7 @@ function _renderPin() {
   });
 }
 
-var AGENT_LABELS = { main: 'Main', research: 'Research', comms: 'Comms', content: 'Content', ops: 'Ops' };
+var AGENT_LABELS = { main: 'Ivonne', research: 'Research', comms: 'Comms', content: 'Content', ops: 'Ops' };
 
 // Switching-in-progress guard so a rapid double-click doesn't spawn two
 // reconnect cycles.
@@ -1362,7 +1362,7 @@ async function togglePin(agentId) {
     // 1. Optimistic UI update
     pinnedAgent = targetAgent;
     _renderPin();
-    var statusLabel = targetAgent ? (AGENT_LABELS[targetAgent] || targetAgent) : 'Main';
+    var statusLabel = targetAgent ? (AGENT_LABELS[targetAgent] || targetAgent) : 'Ivonne';
     addTranscriptEntry('system', 'Switching to ' + statusLabel + '...');
     document.getElementById('statusText').textContent = 'switching to ' + statusLabel + '...';
 
@@ -1712,7 +1712,7 @@ window.addEventListener('beforeunload', __warRoomCleanup);
 async function toggleMeeting() {
   var btn = document.getElementById('meetingBtn');
   if (!meetingActive) {
-    var agentLabel = pinnedAgent ? (AGENT_LABELS[pinnedAgent] || pinnedAgent) : 'Main';
+    var agentLabel = pinnedAgent ? (AGENT_LABELS[pinnedAgent] || pinnedAgent) : 'Ivonne';
     btn.textContent = 'Setting up ' + agentLabel + '...';
     btn.disabled = true;
     btn.className = 'btn';

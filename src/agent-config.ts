@@ -67,7 +67,7 @@ const DEFAULT_AGENT_NAMES: Record<string, string> = {
 };
 
 const DEFAULT_AGENT_ROLES: Record<string, string> = {
-  main: 'Main',
+  main: 'General ops',
   ops: 'ops',
   comms: 'comms',
   content: 'content',

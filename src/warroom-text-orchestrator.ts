@@ -78,7 +78,7 @@ export interface RosterAgent {
 
 const MAIN_AGENT: RosterAgent = {
   id: 'main',
-  name: 'Main',
+  name: 'Ivonne',
   description: 'General ops and triage',
 };
 
@@ -1503,7 +1503,7 @@ async function runAgentTurn(args: RunAgentTurnArgs): Promise<string> {
     type: 'status_update',
     turnId,
     phase: 'streaming',
-    label: `${agentId === 'main' ? 'Main' : agentId} is typing…`,
+    label: `${agentId === 'main' ? 'Ivonne' : agentId} is typing…`,
     agentId,
   });
 
@@ -1663,7 +1663,7 @@ async function runAgentTurn(args: RunAgentTurnArgs): Promise<string> {
               channel.emit({
                 type: 'system_note',
                 turnId,
-                text: `${agentId === 'main' ? 'Main' : agentId} hit the per-turn tool budget (${TOOL_BUDGET_PER_TURN} calls). Asking them to wrap up.`,
+                text: `${agentId === 'main' ? 'Ivonne' : agentId} hit the per-turn tool budget (${TOOL_BUDGET_PER_TURN} calls). Asking them to wrap up.`,
                 tone: 'warn',
                 dismissable: true,
               });
@@ -1830,7 +1830,7 @@ async function runAgentTurn(args: RunAgentTurnArgs): Promise<string> {
       reason: timedOut ? 'agent timed out' : (incomplete ? 'cancelled before content' : 'no content'),
     });
     if (role === 'primary') {
-      const agentLabel = agentId === 'main' ? 'Main' : agentId;
+      const agentLabel = agentId === 'main' ? 'Ivonne' : agentId;
       // Build a richer fallback when we know the agent ran out of headroom
       // mid-tool-loop. Empty text + tool calls + max_turns stop reason =
       // "did real work, ran out of room before finalizing." Surface what
@@ -2044,4 +2044,3 @@ export function maybeLogWarRoomToHive(
   logFn(agentId, meetingChatId, action, summary);
   return { logged: true, action, summary };
 }
-
