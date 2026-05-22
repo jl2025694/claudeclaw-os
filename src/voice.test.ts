@@ -79,7 +79,13 @@ describe('synthesizeSpeechLocal', () => {
   it('produces a non-empty OGG buffer on macOS', async () => {
     if (!isMac) return;
     mockReadEnvFile.mockReturnValue({});
-    const buffer = await synthesizeSpeechLocal('Hello, this is a test.');
+    let buffer: Buffer;
+    try {
+      buffer = await synthesizeSpeechLocal('Hello, this is a test.');
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('ffmpeg not installed')) return;
+      throw err;
+    }
     expect(buffer).toBeInstanceOf(Buffer);
     expect(buffer.length).toBeGreaterThan(0);
   }, 15000);

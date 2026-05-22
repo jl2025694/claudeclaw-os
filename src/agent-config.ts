@@ -280,6 +280,40 @@ export function listAllAgents(): Array<{
  * server kills + respawns its subprocess when this changes if callers
  * want the new roster to take effect immediately.
  */
+// ── Agent groups ──────────────────────────────────────────────────────
+// Groups are stored in CLAUDECLAW_CONFIG/agent-groups.json so they
+// persist across deploys without touching individual agent.yaml files.
+
+const AGENT_GROUPS_FILE = path.join(CLAUDECLAW_CONFIG, 'agent-groups.json');
+
+let _groupsCache: Record<string, string> | null = null;
+let _groupsMtime = 0;
+
+/** Load agent-to-group mapping. Cached and auto-refreshed on file change. */
+export function loadAgentGroups(): Record<string, string> {
+  try {
+    const stat = fs.statSync(AGENT_GROUPS_FILE);
+    if (_groupsCache && stat.mtimeMs === _groupsMtime) return _groupsCache;
+    _groupsCache = JSON.parse(fs.readFileSync(AGENT_GROUPS_FILE, 'utf-8'));
+    _groupsMtime = stat.mtimeMs;
+    return _groupsCache!;
+  } catch {
+    return {};
+  }
+}
+
+/** Get the group for a specific agent. Returns undefined if unassigned. */
+export function getAgentGroup(agentId: string): string | undefined {
+  return loadAgentGroups()[agentId];
+}
+
+/** Update the entire groups mapping and write to disk. */
+export function saveAgentGroups(groups: Record<string, string>): void {
+  fs.writeFileSync(AGENT_GROUPS_FILE, JSON.stringify(groups, null, 2));
+  _groupsCache = groups;
+  _groupsMtime = Date.now();
+}
+
 export function refreshWarRoomRoster(): void {
   try {
     const ids = ['main', ...listAgentIds().filter((id) => id !== 'main')];

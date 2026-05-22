@@ -123,6 +123,18 @@ function checkLaunchd(label: string): CheckStatus {
         detail: 'scheduled',
       };
     }
+    // StartInterval services (e.g. obsidian-sync) run periodically and exit;
+    // they are healthy as long as they are loaded and last exit was 0.
+    if (!running && /run interval = \d+/.test(out)) {
+      const exitOk = /last exit code = 0/.test(out);
+      return {
+        ok: exitOk,
+        label: `service:${label}`,
+        detail: exitOk ? 'interval-ok' : 'interval-failing',
+        restartable: !exitOk,
+        restartLabel: exitOk ? undefined : label,
+      };
+    }
     const pid = out.match(/\bpid = (\d+)/)?.[1];
     return {
       ok: running,

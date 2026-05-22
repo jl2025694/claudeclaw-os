@@ -21,8 +21,16 @@ import {
 import { cosineSimilarity, embedText } from './embeddings.js';
 import { generateContent, parseJsonResponse } from './gemini.js';
 import { logger } from './logger.js';
-import { ingestConversationTurn } from './memory-ingest.js';
+import { extractViaClaude, ingestConversationTurn } from './memory-ingest.js';
 import { buildObsidianContext } from './obsidian.js';
+
+const RELEVANCE_QUOTA_BACKOFF_MS = 5 * 60 * 1000;
+let relevanceSuspendedUntil = 0;
+
+function isQuotaError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /429|RESOURCE_EXHAUSTED|quota/i.test(msg);
+}
 
 /**
  * Build a structured memory context string to prepend to the user's message.
@@ -307,7 +315,8 @@ export async function evaluateMemoryRelevance(
   userMessage: string,
   assistantResponse: string,
 ): Promise<void> {
-  if (surfacedMemoryIds.length === 0 || !GOOGLE_API_KEY) return;
+  if (surfacedMemoryIds.length === 0) return;
+  if (Date.now() < relevanceSuspendedUntil) return;
 
   try {
     // Build a list of memories with their content so Gemini can actually judge
@@ -326,12 +335,29 @@ ${memoryList}`;
     const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error('Evaluation timeout')), 5000),
     );
-    const raw = await Promise.race([generateContent(prompt), timeoutPromise]);
+    let raw: string;
+    try {
+      raw = await Promise.race([extractViaClaude(prompt, 5000), timeoutPromise]);
+    } catch (claudeErr) {
+      if (!GOOGLE_API_KEY) return;
+      logger.debug(
+        { err: claudeErr instanceof Error ? claudeErr.message : claudeErr },
+        'Memory relevance evaluation via Claude failed; falling back to Gemini',
+      );
+      raw = await Promise.race([generateContent(prompt), timeoutPromise]);
+    }
     const usefulIds = parseJsonResponse<number[]>(raw);
     if (!usefulIds || !Array.isArray(usefulIds)) return;
 
     batchUpdateMemoryRelevance(surfacedMemoryIds, new Set(usefulIds));
-  } catch {
+  } catch (err) {
+    if (isQuotaError(err)) {
+      relevanceSuspendedUntil = Date.now() + RELEVANCE_QUOTA_BACKOFF_MS;
+      logger.warn(
+        { backoffMs: RELEVANCE_QUOTA_BACKOFF_MS },
+        'Memory relevance evaluation quota exceeded. Suspending relevance feedback until cooldown expires.',
+      );
+    }
     // Non-fatal, never block
   }
 }

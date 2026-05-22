@@ -4,6 +4,15 @@ import { fileURLToPath } from 'url';
 
 import { readEnvFile } from './env.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// PROJECT_ROOT is the claudeclaw/ directory — where CLAUDE.md and .env live.
+// The SDK uses this as cwd, which causes Claude Code to load our CLAUDE.md
+// and all global skills from ~/.claude/skills/ via settingSources.
+export const PROJECT_ROOT = path.resolve(__dirname, '..');
+export const STORE_DIR = path.resolve(PROJECT_ROOT, 'store');
+
 const envConfig = readEnvFile([
   'TELEGRAM_BOT_TOKEN',
   'ALLOWED_CHAT_ID',
@@ -22,6 +31,7 @@ const envConfig = readEnvFile([
   'GOOGLE_API_KEY',
   'AGENT_TIMEOUT_MS',
   'AGENT_MAX_TURNS',
+  'MAX_RESUME_CONTEXT_TOKENS',
   'SECURITY_PIN_HASH',
   'IDLE_LOCK_MINUTES',
   'EMERGENCY_KILL_PHRASE',
@@ -33,12 +43,13 @@ const envConfig = readEnvFile([
   'HOURLY_TOKEN_BUDGET',
   'MEMORY_NUDGE_INTERVAL_TURNS',
   'MEMORY_NUDGE_INTERVAL_HOURS',
+  'MEMORY_CONSOLIDATION_ENABLED',
   'EXFILTRATION_GUARD_ENABLED',
   'PROTECTED_ENV_VARS',
   'WARROOM_ENABLED',
   'WARROOM_PORT',
   'STREAM_STRATEGY',
-]);
+], PROJECT_ROOT);
 
 // ── Multi-agent support ──────────────────────────────────────────────
 // These are mutable and overridden by index.ts when --agent is passed.
@@ -96,15 +107,6 @@ export const GROQ_API_KEY = envConfig.GROQ_API_KEY ?? '';
 export const ELEVENLABS_API_KEY = envConfig.ELEVENLABS_API_KEY ?? '';
 export const ELEVENLABS_VOICE_ID = envConfig.ELEVENLABS_VOICE_ID ?? '';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// PROJECT_ROOT is the claudeclaw/ directory — where CLAUDE.md lives.
-// The SDK uses this as cwd, which causes Claude Code to load our CLAUDE.md
-// and all global skills from ~/.claude/skills/ via settingSources.
-export const PROJECT_ROOT = path.resolve(__dirname, '..');
-export const STORE_DIR = path.resolve(PROJECT_ROOT, 'store');
-
 // ── External config directory ────────────────────────────────────────
 // Personal config files (CLAUDE.md, agent.yaml, agent CLAUDE.md) can live
 // outside the repo in CLAUDECLAW_CONFIG (default ~/.claudeclaw) so they
@@ -157,6 +159,14 @@ export const AGENT_MAX_TURNS = parseInt(
 // Override via CONTEXT_LIMIT in .env if using a different model variant.
 export const CONTEXT_LIMIT = parseInt(
   process.env.CONTEXT_LIMIT || envConfig.CONTEXT_LIMIT || '1000000',
+  10,
+);
+
+// If a persisted Claude session is already this large, start a fresh session
+// instead of resuming it. This prevents high-cache sessions from becoming the
+// default path for every future Telegram turn.
+export const MAX_RESUME_CONTEXT_TOKENS = parseInt(
+  process.env.MAX_RESUME_CONTEXT_TOKENS || envConfig.MAX_RESUME_CONTEXT_TOKENS || '80000',
   10,
 );
 
@@ -247,6 +257,8 @@ export const MEMORY_NUDGE_INTERVAL_HOURS = parseInt(
   process.env.MEMORY_NUDGE_INTERVAL_HOURS || envConfig.MEMORY_NUDGE_INTERVAL_HOURS || '2',
   10,
 );
+export const MEMORY_CONSOLIDATION_ENABLED =
+  (process.env.MEMORY_CONSOLIDATION_ENABLED || envConfig.MEMORY_CONSOLIDATION_ENABLED || 'true').toLowerCase() !== 'false';
 
 // Secret exfiltration guard
 export const EXFILTRATION_GUARD_ENABLED =

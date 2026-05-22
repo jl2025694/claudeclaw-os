@@ -68,7 +68,7 @@ import {
 import { computeNextRun } from './scheduler.js';
 import { generateContent, parseJsonResponse } from './gemini.js';
 import { getSecurityStatus } from './security.js';
-import { AGENT_ID_RE, agentExists, formatAgentDisplayName, listAgentIds, loadAgentConfig, resolveAgentDir, setAgentModel } from './agent-config.js';
+import { AGENT_ID_RE, agentExists, formatAgentDisplayName, getAgentGroup, listAgentIds, loadAgentConfig, loadAgentGroups, resolveAgentDir, saveAgentGroups, setAgentModel } from './agent-config.js';
 import {
   resolveAgentAvatar,
   avatarEtag,
@@ -1897,6 +1897,7 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
           running,
           todayTurns: stats.todayTurns,
           todayCost: stats.todayCost,
+          group: getAgentGroup(id),
           // Cache-bust token for <img> URLs across all surfaces. Derived
           // from filesystem mtime+size of the resolved avatar — changes
           // the moment a user upload or Telegram fetch lands.
@@ -1918,11 +1919,25 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
     }
     const mainStats = getAgentTokenStats('main');
     const allAgents = [
-      { id: 'main', name: formatAgentDisplayName('main'), description: 'Primary HansCorp bot', model: getMainModelOverride() ?? 'claude-opus-4-6', running: mainRunning, todayTurns: mainStats.todayTurns, todayCost: mainStats.todayCost, avatar_etag: avatarEtagForId('main') },
+      { id: 'main', name: formatAgentDisplayName('main'), description: 'Primary HansCorp bot', model: getMainModelOverride() ?? 'claude-opus-4-6', running: mainRunning, todayTurns: mainStats.todayTurns, todayCost: mainStats.todayCost, group: getAgentGroup('main'), avatar_etag: avatarEtagForId('main') },
       ...agents,
     ];
 
     return c.json({ agents: allAgents });
+  });
+
+  // Update group for a single agent
+  app.patch('/api/agents/:id/group', async (c) => {
+    const agentId = c.req.param('id');
+    const { group } = await c.req.json<{ group: string | null }>();
+    const groups = { ...loadAgentGroups() };
+    if (group === null || group === '') {
+      delete groups[agentId];
+    } else {
+      groups[agentId] = group;
+    }
+    saveAgentGroups(groups);
+    return c.json({ ok: true });
   });
 
   // Agent-specific recent conversation

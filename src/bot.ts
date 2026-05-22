@@ -19,6 +19,7 @@ import {
   agentSystemPrompt,
   TYPING_REFRESH_MS,
   AGENT_TIMEOUT_MS,
+  MAX_RESUME_CONTEXT_TOKENS,
   STREAM_STRATEGY,
   MODEL_FALLBACK_CHAIN,
   SHOW_COST_FOOTER,
@@ -30,7 +31,7 @@ import {
   HOURLY_TOKEN_BUDGET,
   PROJECT_ROOT,
 } from './config.js';
-import { clearSession, getRecentConversation, getRecentMemories, getRecentTaskOutputs, getSession, getSessionConversation, logToHiveMind, pinMemory, unpinMemory, setSession, lookupWaChatId, saveWaMessageMap, saveTokenUsage, saveCompactionEvent, getCompactionCount } from './db.js';
+import { clearSession, getRecentConversation, getRecentMemories, getRecentTaskOutputs, getSession, getSessionConversation, getSessionTokenUsage, logToHiveMind, pinMemory, unpinMemory, setSession, lookupWaChatId, saveWaMessageMap, saveTokenUsage, saveCompactionEvent, getCompactionCount } from './db.js';
 import { logger } from './logger.js';
 import { downloadMedia, buildPhotoMessage, buildDocumentMessage, buildVideoMessage } from './media.js';
 import { buildMemoryContext, evaluateMemoryRelevance, saveConversationTurn, shouldNudgeMemory, MEMORY_NUDGE_TEXT } from './memory.js';
@@ -488,7 +489,24 @@ async function handleMessage(ctx: Context, message: string, forceVoiceReply = fa
   }
 
   // Fetch session first: if resuming, the model already has the system prompt in context.
-  const sessionId = getSession(chatIdStr, AGENT_ID);
+  let sessionId = getSession(chatIdStr, AGENT_ID);
+  if (sessionId && MAX_RESUME_CONTEXT_TOKENS > 0) {
+    const sessionUsage = getSessionTokenUsage(sessionId);
+    if ((sessionUsage?.lastContextTokens ?? 0) >= MAX_RESUME_CONTEXT_TOKENS) {
+      logger.warn(
+        {
+          chatId: chatIdStr,
+          agentId: AGENT_ID,
+          sessionId,
+          lastContextTokens: sessionUsage?.lastContextTokens,
+          maxResumeContextTokens: MAX_RESUME_CONTEXT_TOKENS,
+        },
+        'Clearing oversized Claude session before resume',
+      );
+      clearSession(chatIdStr, AGENT_ID);
+      sessionId = undefined;
+    }
+  }
 
   // Build memory context and prepend to message
   const { contextText: memCtx, surfacedMemoryIds, surfacedMemorySummaries } = await buildMemoryContext(chatIdStr, message, AGENT_ID);

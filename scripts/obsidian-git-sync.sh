@@ -22,11 +22,11 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   exit 1
 fi
 
-git fetch "$REMOTE" "$BRANCH"
-git pull --rebase --autostash "$REMOTE" "$BRANCH"
+# Local snapshots only — Obsidian Sync handles cross-device sync.
+# No fetch/pull/push to avoid conflicts with Obsidian Sync.
 
 if git diff --quiet && git diff --cached --quiet && [ -z "$(git ls-files --others --exclude-standard)" ]; then
-  echo "No Obsidian changes to sync."
+  echo "No Obsidian changes to snapshot."
   exit 0
 fi
 
@@ -37,5 +37,4 @@ if git diff --cached --quiet; then
   exit 0
 fi
 
-git commit -m "Auto-sync Obsidian vault"
-git push "$REMOTE" "HEAD:$BRANCH"
+git commit -m "Auto-snapshot Obsidian vault"

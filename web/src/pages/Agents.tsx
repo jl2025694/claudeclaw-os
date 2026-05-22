@@ -24,11 +24,12 @@ interface Agent {
   running: boolean;
   todayTurns: number;
   todayCost: number;
+  group?: string;
 }
 
 interface Template { id: string; name: string; description: string; }
 
-export function Agents() {
+export function Agents({ filterGroup }: { filterGroup?: string } = {}) {
   const { data, loading, error, refresh } = useFetch<{ agents: Agent[] }>('/api/agents', 30_000);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -39,7 +40,10 @@ export function Agents() {
   const [refreshingSuggestions, setRefreshingSuggestions] = useState(false);
   const suggestionsFetch = useAgentSuggestions();
   const suggestions = suggestionsFetch.data?.suggestions ?? [];
-  const agents = data?.agents ?? [];
+  const allAgents = data?.agents ?? [];
+  const agents = filterGroup
+    ? allAgents.filter((a) => a.group === filterGroup)
+    : allAgents;
 
   async function refreshSuggestions() {
     setRefreshingSuggestions(true);
@@ -101,7 +105,7 @@ export function Agents() {
   return (
     <div class="flex flex-col h-full">
       <PageHeader
-        title="Agents"
+        title={filterGroup ? filterGroup.charAt(0).toUpperCase() + filterGroup.slice(1) : 'Agents'}
         actions={
           <>
             <span class="text-[11px] text-[var(--color-text-muted)] tabular-nums mr-2">

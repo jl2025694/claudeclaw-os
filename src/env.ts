@@ -7,8 +7,8 @@ import path from 'path';
  * do with the values. This keeps secrets out of the process environment
  * so they don't leak to child processes.
  */
-export function readEnvFile(keys: string[]): Record<string, string> {
-  const envFile = path.join(process.cwd(), '.env');
+export function readEnvFile(keys: string[], baseDir = process.cwd()): Record<string, string> {
+  const envFile = path.join(baseDir, '.env');
   let content: string;
   try {
     content = fs.readFileSync(envFile, 'utf-8');

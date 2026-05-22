@@ -4,7 +4,7 @@ import path from 'path';
 import { loadAgentConfig, loadAgentObsidianConfig, listAgentIds, resolveAgentDir, resolveAgentClaudeMd, refreshWarRoomRoster } from './agent-config.js';
 import { createBot } from './bot.js';
 import { checkPendingMigrations } from './migrations.js';
-import { ALLOWED_CHAT_ID, activeBotToken, STORE_DIR, PROJECT_ROOT, CLAUDECLAW_CONFIG, GOOGLE_API_KEY, setAgentOverrides, SECURITY_PIN_HASH, IDLE_LOCK_MINUTES, EMERGENCY_KILL_PHRASE, WARROOM_ENABLED, WARROOM_PORT } from './config.js';
+import { ALLOWED_CHAT_ID, activeBotToken, STORE_DIR, PROJECT_ROOT, CLAUDECLAW_CONFIG, GOOGLE_API_KEY, MEMORY_CONSOLIDATION_ENABLED, setAgentOverrides, SECURITY_PIN_HASH, IDLE_LOCK_MINUTES, EMERGENCY_KILL_PHRASE, WARROOM_ENABLED, WARROOM_PORT } from './config.js';
 import { startDashboard } from './dashboard.js';
 import { initDatabase, cleanupOldMissionTasks, insertAuditLog } from './db.js';
 import { initSecurity, setAuditCallback } from './security.js';
@@ -163,7 +163,7 @@ async function main(): Promise<void> {
     runWarroomAvatarMigration();
 
     // Memory consolidation: find patterns across recent memories every 30 minutes
-    if (ALLOWED_CHAT_ID && GOOGLE_API_KEY) {
+    if (ALLOWED_CHAT_ID && GOOGLE_API_KEY && MEMORY_CONSOLIDATION_ENABLED) {
       // Delay first consolidation 2 minutes after startup to let things settle
       setTimeout(() => {
         void runConsolidation(ALLOWED_CHAT_ID).catch((err) =>
@@ -176,6 +176,8 @@ async function main(): Promise<void> {
         );
       }, 30 * 60 * 1000);
       logger.info('Memory consolidation enabled (every 30 min)');
+    } else if (!MEMORY_CONSOLIDATION_ENABLED) {
+      logger.info('Memory consolidation disabled by MEMORY_CONSOLIDATION_ENABLED=false');
     }
   } else {
     logger.info({ agentId: AGENT_ID }, 'Skipping decay/consolidation (main process owns these)');
