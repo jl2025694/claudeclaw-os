@@ -17,7 +17,7 @@ import { apiGet, apiPatch } from './api';
 
 // ── Defaults ────────────────────────────────────────────────────────────
 
-const DEFAULT_WORKSPACE_NAME = 'ClaudeClaw';
+const DEFAULT_WORKSPACE_NAME = 'HansCorp';
 const DEFAULT_COLLAPSED: string[] = []; // every section starts open
 
 // hotkey mod is 'auto' by default; resolveModKey() consults navigator.platform

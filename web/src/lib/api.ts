@@ -34,11 +34,28 @@ export class ApiError extends Error {
   }
 }
 
+function resetAuthOnUnauthorized(status: number): void {
+  if (status !== 401 || !dashboardToken) return;
+  try { sessionStorage.removeItem('claudeclaw.token'); } catch {}
+  const url = new URL(window.location.href);
+  url.searchParams.delete('token');
+  window.location.href = url.toString();
+}
+
+function errorMessage(method: string, path: string, status: number, body: unknown): string {
+  if (body && typeof body === 'object') {
+    const error = (body as { error?: unknown }).error;
+    if (typeof error === 'string' && error.trim()) return error;
+  }
+  return `${method} ${path} failed: ${status}`;
+}
+
 export async function apiGet<T = unknown>(path: string): Promise<T> {
   const res = await fetch(withToken(path), { method: 'GET' });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new ApiError(res.status, body, `GET ${path} failed: ${res.status}`);
+    resetAuthOnUnauthorized(res.status);
+    throw new ApiError(res.status, body, errorMessage('GET', path, res.status, body));
   }
   return res.json();
 }
@@ -51,7 +68,8 @@ export async function apiPost<T = unknown>(path: string, body?: unknown): Promis
   });
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
-    throw new ApiError(res.status, errBody, `POST ${path} failed: ${res.status}`);
+    resetAuthOnUnauthorized(res.status);
+    throw new ApiError(res.status, errBody, errorMessage('POST', path, res.status, errBody));
   }
   return res.json();
 }
@@ -64,7 +82,8 @@ export async function apiPatch<T = unknown>(path: string, body: unknown): Promis
   });
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
-    throw new ApiError(res.status, errBody, `PATCH ${path} failed: ${res.status}`);
+    resetAuthOnUnauthorized(res.status);
+    throw new ApiError(res.status, errBody, errorMessage('PATCH', path, res.status, errBody));
   }
   return res.json();
 }
@@ -77,7 +96,8 @@ export async function apiPut<T = unknown>(path: string, body: unknown): Promise<
   });
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
-    throw new ApiError(res.status, errBody, `PUT ${path} failed: ${res.status}`);
+    resetAuthOnUnauthorized(res.status);
+    throw new ApiError(res.status, errBody, errorMessage('PUT', path, res.status, errBody));
   }
   return res.json();
 }
@@ -86,7 +106,8 @@ export async function apiDelete<T = unknown>(path: string): Promise<T> {
   const res = await fetch(withToken(path), { method: 'DELETE' });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new ApiError(res.status, body, `DELETE ${path} failed: ${res.status}`);
+    resetAuthOnUnauthorized(res.status);
+    throw new ApiError(res.status, body, errorMessage('DELETE', path, res.status, body));
   }
   return res.json();
 }

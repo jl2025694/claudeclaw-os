@@ -48,8 +48,8 @@ export function AgentDetail({ agent, onClose }: Props) {
 
       {activeTab === 'overview' && <OverviewTab agent={agent} />}
       {activeTab === 'conversation' && <ConversationTab agentId={agent.id} />}
-      {activeTab === 'tasks' && <TasksTab agentId={agent.id} />}
-      {activeTab === 'hive' && <HiveTab agentId={agent.id} />}
+      {activeTab === 'tasks' && <TasksTab agentId={agent.id} agentName={agent.name} />}
+      {activeTab === 'hive' && <HiveTab agentId={agent.id} agentName={agent.name} />}
     </Modal>
   );
 }
@@ -251,13 +251,13 @@ function ConversationTab({ agentId }: { agentId: string }) {
   );
 }
 
-function TasksTab({ agentId }: { agentId: string }) {
+function TasksTab({ agentId, agentName }: { agentId: string; agentName: string }) {
   const { data, loading, error } = useFetch<{ tasks: ScheduledTask[] }>(`/api/agents/${agentId}/tasks`);
   const tasks = data?.tasks ?? [];
 
   if (loading) return <Loading />;
   if (error) return <ErrorBlock error={error} />;
-  if (tasks.length === 0) return <Empty text={`No scheduled tasks for ${agentId}.`} />;
+  if (tasks.length === 0) return <Empty text={`No scheduled tasks for ${agentName}.`} />;
 
   return (
     <div class="space-y-1.5">
@@ -279,13 +279,13 @@ function TasksTab({ agentId }: { agentId: string }) {
   );
 }
 
-function HiveTab({ agentId }: { agentId: string }) {
+function HiveTab({ agentId, agentName }: { agentId: string; agentName: string }) {
   const { data, loading, error } = useFetch<{ entries: HiveEntry[] }>(`/api/hive-mind?agent=${agentId}&limit=30`);
   const entries = data?.entries ?? [];
 
   if (loading) return <Loading />;
   if (error) return <ErrorBlock error={error} />;
-  if (entries.length === 0) return <Empty text={`No hive mind activity for ${agentId} yet.`} />;
+  if (entries.length === 0) return <Empty text={`No hive mind activity for ${agentName} yet.`} />;
 
   return (
     <div class="space-y-1">

@@ -44,11 +44,11 @@ For tiny questions ("what time is it", "who's on my team"), use the inline tools
 
 AGENT_PERSONAS = {
     "main": (
-        """You are Main, the Hand of the King in the War Room. You're the default agent and triage lead. Personality: chill, grounded, decisive. You're the face of the agent team and speak for them when the user hasn't picked a specific one.
+        """You are Ivonne, the Hand of the King in the War Room. Your internal routing id is main. You're the default agent and triage lead. Personality: chill, grounded, decisive. You're the face of the agent team and speak for them when the user hasn't picked a specific one.
 
 Specialty: general-purpose work, conversation, triage, and answering questions directly. You have broad knowledge. When the user asks you something, ANSWER IT. Don't deflect to another agent unless they ask you to or the task clearly requires execution tools you don't have (sending emails, running searches, scheduling meetings, writing long documents).
 
-You are NOT just a router. You're the main agent. Think of yourself as the user's right hand who happens to have specialists available. Handle things yourself first. Only suggest delegation when another agent would genuinely do it better, and ask before delegating: "want me to pass this to research?" not just silently handing it off.
+You are NOT just a router. You're Ivonne, the main agent. Think of yourself as the user's right hand who happens to have specialists available. Handle things yourself first. Only suggest delegation when another agent would genuinely do it better, and ask before delegating: "want me to pass this to research?" not just silently handing it off.
 
 """
         + SHARED_RULES
@@ -106,7 +106,7 @@ Specialty: calendar ops (Google Calendar, Fireflies, Calendly), scheduled tasks,
 AUTO_ROUTER_PERSONA = (
     """You are the front desk of the War Room. Five specialist agents sit around you:
 
-- main: Hand of the King. General ops, triage, anything that doesn't clearly fit another agent.
+- main (Ivonne): Hand of the King. General ops, triage, anything that doesn't clearly fit another agent.
 - research: Grand Maester. Deep web research, academic sources, competitive intel, trend analysis.
 - comms: Master of Whisperers. Email, Slack, Telegram, WhatsApp, customer comms, inbox triage.
 - content: Royal Bard. Writing, YouTube scripts, LinkedIn posts, blog copy, creative direction.
@@ -162,7 +162,7 @@ def _build_auto_roster_block() -> str:
     import json
     from pathlib import Path
     _known = {
-        "main": "Hand of the King. General ops, triage, anything that doesn't clearly fit another agent.",
+        "main": "Ivonne. Hand of the King. General ops, triage, anything that doesn't clearly fit another agent.",
         "research": "Grand Maester. Deep web research, academic sources, competitive intel, trend analysis.",
         "comms": "Master of Whisperers. Email, Slack, Telegram, WhatsApp, customer comms, inbox triage.",
         "content": "Royal Bard. Writing, YouTube scripts, LinkedIn posts, blog copy, creative direction.",
@@ -174,12 +174,13 @@ def _build_auto_roster_block() -> str:
         for a in agents:
             aid = a["id"]
             desc = _known.get(aid, a.get("description", "Specialist agent."))
-            lines.append(f"- {aid}: {desc}")
+            label = f"{aid} (Ivonne)" if aid == "main" else aid
+            lines.append(f"- {label}: {desc}")
         if lines:
             return "\n".join(lines)
     except Exception:
         pass
-    return "\n".join(f"- {k}: {v}" for k, v in _known.items())
+    return "\n".join(f"- {k} (Ivonne): {v}" if k == "main" else f"- {k}: {v}" for k, v in _known.items())
 
 
 def get_persona(agent_id: str, mode: str = "direct") -> str:
@@ -193,7 +194,7 @@ def get_persona(agent_id: str, mode: str = "direct") -> str:
         # Inject dynamic roster into the auto-router persona
         roster = _build_auto_roster_block()
         return AUTO_ROUTER_PERSONA.replace(
-            "- main: Hand of the King. General ops, triage, anything that doesn't clearly fit another agent.\n"
+            "- main (Ivonne): Hand of the King. General ops, triage, anything that doesn't clearly fit another agent.\n"
             "- research: Grand Maester. Deep web research, academic sources, competitive intel, trend analysis.\n"
             "- comms: Master of Whisperers. Email, Slack, Telegram, WhatsApp, customer comms, inbox triage.\n"
             "- content: Royal Bard. Writing, YouTube scripts, LinkedIn posts, blog copy, creative direction.\n"

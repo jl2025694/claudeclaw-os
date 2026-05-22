@@ -1,5 +1,5 @@
 #!/bin/bash
-# Install ClaudeClaw launchd agents for auto-start on login + auto-restart on crash
+# Install HansCorp launchd agents for auto-start on login + auto-restart on crash
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -17,7 +17,7 @@ if [ -z "$NODE_PATH" ]; then
 fi
 NODE_BIN_DIR="$(dirname "$NODE_PATH")"
 
-echo "ClaudeClaw launchd installer"
+echo "HansCorp launchd installer"
 echo "============================"
 echo "Using Node binary: $NODE_PATH"
 echo ""

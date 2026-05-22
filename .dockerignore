@@ -1,0 +1,14 @@
+.git
+.env
+.env.*
+node_modules
+dist
+store
+logs
+workspace
+.wwebjs_cache
+warroom/.venv
+warroom/__pycache__
+**/__pycache__
+*.log
+.DS_Store

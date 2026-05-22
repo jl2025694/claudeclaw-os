@@ -292,6 +292,51 @@ export function getWarRoomHtml(token: string, chatId: string, warroomPort: numbe
     background: rgba(255,255,255,0.04);
     border-color: rgba(255,255,255,0.08);
   }
+  .agent-card::before {
+    content: attr(data-agent-id-tooltip);
+    display: none;
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 8px);
+    transform: translateX(-50%) translateY(4px);
+    z-index: 30;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.28);
+    background: #050505;
+    color: #ffffff;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 90ms ease, transform 90ms ease;
+  }
+  .agent-card:hover::before { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .agent-id-tooltip-layer {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 2147483647;
+    max-width: 220px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.28);
+    background: #050505;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.72);
+    color: #fff;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(2px);
+    transition: opacity 80ms ease, transform 80ms ease;
+  }
+  .agent-id-tooltip-layer.show { opacity: 1; transform: translateY(0); }
   .agent-card.speaking {
     border-color: rgba(34, 197, 94, 0.4);
     background: rgba(34, 197, 94, 0.05);
@@ -703,23 +748,23 @@ export function getWarRoomHtml(token: string, chatId: string, warroomPort: numbe
   <div class="table-wrap">
     <div class="table-surface"></div>
     <div class="table-rim"></div>
-    <div class="stage-avatar" data-agent="main" style="--seat-x:0px;--seat-y:-150px">
-      <img src="/api/agents/main/avatar?token=${safeToken}" alt="Main">
-      <div class="stage-nameplate">MAIN</div>
+    <div class="stage-avatar" data-agent="main" data-agent-id-tooltip="Agent ID: main" title="Agent ID: main" style="--seat-x:0px;--seat-y:-150px">
+      <img src="/api/agents/main/avatar?token=${safeToken}" alt="Ivonne">
+      <div class="stage-nameplate">IVONNE</div>
     </div>
-    <div class="stage-avatar" data-agent="research" style="--seat-x:-250px;--seat-y:-40px">
+    <div class="stage-avatar" data-agent="research" data-agent-id-tooltip="Agent ID: research" title="Agent ID: research" style="--seat-x:-250px;--seat-y:-40px">
       <img src="/api/agents/research/avatar?token=${safeToken}" alt="Research">
       <div class="stage-nameplate">RESEARCH</div>
     </div>
-    <div class="stage-avatar" data-agent="comms" style="--seat-x:250px;--seat-y:-40px">
+    <div class="stage-avatar" data-agent="comms" data-agent-id-tooltip="Agent ID: comms" title="Agent ID: comms" style="--seat-x:250px;--seat-y:-40px">
       <img src="/api/agents/comms/avatar?token=${safeToken}" alt="Comms">
       <div class="stage-nameplate">COMMS</div>
     </div>
-    <div class="stage-avatar" data-agent="content" style="--seat-x:-165px;--seat-y:135px">
+    <div class="stage-avatar" data-agent="content" data-agent-id-tooltip="Agent ID: content" title="Agent ID: content" style="--seat-x:-165px;--seat-y:135px">
       <img src="/api/agents/content/avatar?token=${safeToken}" alt="Content">
       <div class="stage-nameplate">CONTENT</div>
     </div>
-    <div class="stage-avatar" data-agent="ops" style="--seat-x:165px;--seat-y:135px">
+    <div class="stage-avatar" data-agent="ops" data-agent-id-tooltip="Agent ID: ops" title="Agent ID: ops" style="--seat-x:165px;--seat-y:135px">
       <img src="/api/agents/ops/avatar?token=${safeToken}" alt="Ops">
       <div class="stage-nameplate">OPS</div>
     </div>
@@ -820,6 +865,54 @@ function resolveDashboardToken() {
 }
 
 const TOKEN = resolveDashboardToken();
+
+function installAgentIdTooltip() {
+  var tooltip = null;
+  var active = null;
+  function getTooltip() {
+    if (tooltip) return tooltip;
+    tooltip = document.createElement('div');
+    tooltip.className = 'agent-id-tooltip-layer';
+    tooltip.setAttribute('role', 'tooltip');
+    document.body.appendChild(tooltip);
+    return tooltip;
+  }
+  function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+  function place(target) {
+    var text = target && target.getAttribute('data-agent-id-tooltip');
+    if (!text) return;
+    var el = getTooltip();
+    el.textContent = text;
+    el.classList.add('show');
+    var tr = target.getBoundingClientRect();
+    var er = el.getBoundingClientRect();
+    var gap = 10;
+    var x = clamp(tr.left + tr.width / 2 - er.width / 2, 8, window.innerWidth - er.width - 8);
+    var y = tr.top >= er.height + gap + 8 ? tr.top - er.height - gap : tr.bottom + gap;
+    el.style.left = Math.round(x) + 'px';
+    el.style.top = Math.round(y) + 'px';
+  }
+  function closest(node) {
+    return node && node.nodeType === 1 ? node.closest('[data-agent-id-tooltip]') : null;
+  }
+  document.addEventListener('pointerover', function(e) {
+    var target = closest(e.target);
+    if (!target) return;
+    active = target;
+    place(target);
+  });
+  document.addEventListener('pointerout', function(e) {
+    var target = closest(e.target);
+    if (!target || active !== target) return;
+    if (e.relatedTarget && target.contains(e.relatedTarget)) return;
+    active = null;
+    if (tooltip) tooltip.classList.remove('show');
+  });
+  document.addEventListener('pointermove', function() { if (active) place(active); });
+  window.addEventListener('scroll', function() { if (active) place(active); }, true);
+  window.addEventListener('resize', function() { if (active) place(active); });
+}
+installAgentIdTooltip();
 
 // The dashboard /ws/warroom proxy enforces the same DASHBOARD_TOKEN gate
 // Hono uses for HTTP routes. The WS upgrade path can't read Authorization
@@ -1205,6 +1298,10 @@ function addTranscriptEntry(speaker, text, agentId) {
   var speakerClass = speaker === 'You' ? 'user' : (speaker === 'system' ? 'system' : 'agent');
   speakerEl.className = 'transcript-speaker ' + speakerClass;
   speakerEl.textContent = speaker === 'system' ? '' : speaker;
+  if (agentId) {
+    speakerEl.setAttribute('data-agent-id-tooltip', 'Agent ID: ' + agentId);
+    speakerEl.setAttribute('title', 'Agent ID: ' + agentId);
+  }
 
   var textEl = document.createElement('div');
   textEl.className = 'transcript-text' + (speaker === 'system' ? ' system-text' : '');
@@ -1333,7 +1430,7 @@ function _renderPin() {
   });
 }
 
-var AGENT_LABELS = {};
+var AGENT_LABELS = { main: 'Ivonne', research: 'Research', comms: 'Comms', content: 'Content', ops: 'Ops' };
 
 // Switching-in-progress guard so a rapid double-click doesn't spawn two
 // reconnect cycles.
@@ -1379,7 +1476,7 @@ async function togglePin(agentId) {
     // 1. Optimistic UI update
     pinnedAgent = targetAgent;
     _renderPin();
-    var statusLabel = targetAgent ? (AGENT_LABELS[targetAgent] || targetAgent) : (AGENT_LABELS['main'] || 'Main');
+    var statusLabel = targetAgent ? (AGENT_LABELS[targetAgent] || targetAgent) : 'Ivonne';
     addTranscriptEntry('system', 'Switching to ' + statusLabel + '...');
     document.getElementById('statusText').textContent = 'switching to ' + statusLabel + '...';
 
@@ -1562,6 +1659,8 @@ function loadAgentCards() {
         card.className = 'agent-card';
         card.id = 'agent-' + agent.id;
         card.setAttribute('data-agent', agent.id);
+        card.setAttribute('data-agent-id-tooltip', 'Agent ID: ' + agent.id);
+        card.setAttribute('title', 'Agent ID: ' + agent.id);
         card.onclick = function(){ togglePin(agent.id); };
         var avatarV = agent.avatar_etag ? ('&v=' + encodeURIComponent(agent.avatar_etag)) : '';
         card.innerHTML = '<div class="agent-avatar"><img src="/api/agents/' + encodeURIComponent(agent.id) + '/avatar?token=' + encodeURIComponent(TOKEN) + avatarV + '" alt="' + safeName + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=\\'none\\'"></div>'
@@ -1734,7 +1833,7 @@ window.addEventListener('beforeunload', __warRoomCleanup);
 async function toggleMeeting() {
   var btn = document.getElementById('meetingBtn');
   if (!meetingActive) {
-    var agentLabel = pinnedAgent ? (AGENT_LABELS[pinnedAgent] || pinnedAgent) : (AGENT_LABELS['main'] || 'Main');
+    var agentLabel = pinnedAgent ? (AGENT_LABELS[pinnedAgent] || pinnedAgent) : 'Ivonne';
     btn.textContent = 'Setting up ' + agentLabel + '...';
     btn.disabled = true;
     btn.className = 'btn';
@@ -1874,7 +1973,7 @@ async function toggleMeeting() {
                       },
                       onBotReady: function() {},
                       onUserTranscript: function(data) { if (data && data.final) addTranscriptEntry('You', data.text); },
-                      onBotTranscript: function(data) { if (data) addTranscriptEntry('Agent', data.text || '', 'main'); },
+                      onBotTranscript: function(data) { if (data) addTranscriptEntry(AGENT_LABELS.main || 'Ivonne', data.text || '', 'main'); },
                       onServerMessage: function(msg) { handleServerMessage(msg); },
                       onError: function(err) { console.error('[WarRoom] Reconnect error:', err); },
                     },
@@ -1905,7 +2004,7 @@ async function toggleMeeting() {
               }
             },
             onBotTranscript: function(data) {
-              if (data) addTranscriptEntry('Agent', data.text || '', 'main');
+              if (data) addTranscriptEntry(AGENT_LABELS.main || 'Ivonne', data.text || '', 'main');
             },
             onServerMessage: function(msg) { handleServerMessage(msg); },
             onError: function(error) {

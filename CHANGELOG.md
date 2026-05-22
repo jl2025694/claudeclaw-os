@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to ClaudeClaw will be documented here.
+All notable changes to HansCorp will be documented here.
 
 ## [unreleased] - 2026-05-01
 

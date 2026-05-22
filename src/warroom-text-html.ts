@@ -58,6 +58,7 @@ export function getWarRoomTextHtml(token: string, chatId: string, meetingId: str
     color: var(--text);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     height: 100vh;
+    height: 100dvh;
     overflow: hidden;
   }
   .app {
@@ -65,6 +66,7 @@ export function getWarRoomTextHtml(token: string, chatId: string, meetingId: str
     grid-template-columns: 240px 1fr;
     grid-template-rows: 56px 1fr;
     height: 100vh;
+    height: 100dvh;
   }
   .header {
     grid-column: 1 / -1;
@@ -203,6 +205,7 @@ export function getWarRoomTextHtml(token: string, chatId: string, meetingId: str
      than the old horizontal row. The status line uses hive_mind to
      show what each agent last did; cross-fades on update. */
   .agent-row {
+    position: relative;
     display: flex; flex-direction: column; align-items: center; gap: 8px;
     padding: 14px 10px 12px;
     border-radius: 16px;
@@ -216,6 +219,51 @@ export function getWarRoomTextHtml(token: string, chatId: string, meetingId: str
     width: 100%;
   }
   .agent-row:hover { background: var(--bg-elev-2); border-color: var(--border-strong); transform: translateY(-1px); }
+  .agent-row::after {
+    content: attr(data-agent-id-tooltip);
+    display: none;
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 8px);
+    transform: translateX(-50%) translateY(4px);
+    z-index: 20;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.28);
+    background: #050505;
+    color: #ffffff;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 90ms ease, transform 90ms ease;
+  }
+  .agent-row:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .agent-id-tooltip-layer {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 2147483647;
+    max-width: 220px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.28);
+    background: #050505;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.72);
+    color: #fff;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(2px);
+    transition: opacity 80ms ease, transform 80ms ease;
+  }
+  .agent-id-tooltip-layer.show { opacity: 1; transform: translateY(0); }
   .agent-row:focus-visible { outline: none; border-color: var(--indigo); box-shadow: 0 0 0 2px rgba(99,102,241,0.25); }
   .agent-row.pinned { border-color: var(--indigo); background: var(--indigo-soft); }
   .agent-row.selected { border-color: rgba(245,158,11,0.5); background: rgba(245,158,11,0.08); }
@@ -1044,7 +1092,7 @@ export function getWarRoomTextHtml(token: string, chatId: string, meetingId: str
       <div class="actions">
         <button type="button" class="commands-btn" id="btn-commands" aria-haspopup="listbox" aria-controls="slash-popup" aria-expanded="false" title="Show slash commands">/ Commands</button>
         <button type="button" class="stop" id="btn-stop" aria-label="Stop current turn">Stop</button>
-        <button type="submit" class="send" id="btn-send" disabled>Send</button>
+        <button type="button" class="send" id="btn-send">Send</button>
       </div>
     </form>
   </main>
@@ -1077,6 +1125,54 @@ const TOKEN = ${jsToken};
 const CHAT_ID = ${jsChatId};
 const MEETING_ID = ${jsMeetingId};
 const API = window.location.origin;
+
+function installAgentIdTooltip() {
+  let tooltip = null;
+  let active = null;
+  function getTooltip() {
+    if (tooltip) return tooltip;
+    tooltip = document.createElement('div');
+    tooltip.className = 'agent-id-tooltip-layer';
+    tooltip.setAttribute('role', 'tooltip');
+    document.body.appendChild(tooltip);
+    return tooltip;
+  }
+  function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+  function place(target) {
+    const text = target?.getAttribute('data-agent-id-tooltip');
+    if (!text) return;
+    const el = getTooltip();
+    el.textContent = text;
+    el.classList.add('show');
+    const tr = target.getBoundingClientRect();
+    const er = el.getBoundingClientRect();
+    const gap = 10;
+    const x = clamp(tr.left + tr.width / 2 - er.width / 2, 8, window.innerWidth - er.width - 8);
+    const y = tr.top >= er.height + gap + 8 ? tr.top - er.height - gap : tr.bottom + gap;
+    el.style.left = Math.round(x) + 'px';
+    el.style.top = Math.round(y) + 'px';
+  }
+  function closest(node) {
+    return node instanceof Element ? node.closest('[data-agent-id-tooltip]') : null;
+  }
+  document.addEventListener('pointerover', (e) => {
+    const target = closest(e.target);
+    if (!target) return;
+    active = target;
+    place(target);
+  });
+  document.addEventListener('pointerout', (e) => {
+    const target = closest(e.target);
+    if (!target || active !== target) return;
+    if (e.relatedTarget && target.contains(e.relatedTarget)) return;
+    active = null;
+    if (tooltip) tooltip.classList.remove('show');
+  });
+  document.addEventListener('pointermove', () => { if (active) place(active); });
+  window.addEventListener('scroll', () => { if (active) place(active); }, true);
+  window.addEventListener('resize', () => { if (active) place(active); });
+}
+installAgentIdTooltip();
 // Q/MEETING_Q carry chatId so the server can validate that the request
 // matches the meeting's chat_id (strict-validate guard). Server treats
 // the param as authoritative — a stale meetingId from another chat is
@@ -1164,6 +1260,8 @@ function renderRoster() {
     row.className = 'agent-row';
     row.id = 'agent-row-' + esc(a.id);
     row.setAttribute('data-agent', a.id);
+    row.setAttribute('data-agent-id-tooltip', 'Agent ID: ' + a.id);
+    row.setAttribute('title', 'Agent ID: ' + a.id);
     row.setAttribute('role', 'listitem');
 
     const av = document.createElement('div');
@@ -1411,8 +1509,12 @@ function applyRosterState() {
   if (pinnedAgent) {
     info.style.display = '';
     infoAgent.textContent = rosterById.get(pinnedAgent)?.name || pinnedAgent;
+    infoAgent.setAttribute('data-agent-id-tooltip', 'Agent ID: ' + pinnedAgent);
+    infoAgent.setAttribute('title', 'Agent ID: ' + pinnedAgent);
   } else {
     info.style.display = 'none';
+    infoAgent.removeAttribute('data-agent-id-tooltip');
+    infoAgent.removeAttribute('title');
   }
 }
 
@@ -1632,6 +1734,8 @@ function appendAgentBubble(turnId, agentId, role, createdAt) {
   const nm = document.createElement('span');
   nm.className = 'name';
   nm.textContent = rosterById.get(agentId)?.name || agentId;
+  nm.setAttribute('data-agent-id-tooltip', 'Agent ID: ' + agentId);
+  nm.setAttribute('title', 'Agent ID: ' + agentId);
   const ts = document.createElement('span');
   ts.className = 'ts';
   // History-loaded bubbles pass the original createdAt so the timestamp
@@ -2657,6 +2761,8 @@ function renderMentionPopup() {
     row.className = 'mention-item' + (i === mentionIndex ? ' active' : '');
     row.setAttribute('role', 'option');
     row.setAttribute('aria-selected', i === mentionIndex ? 'true' : 'false');
+    row.setAttribute('data-agent-id-tooltip', 'Agent ID: ' + a.id);
+    row.setAttribute('title', 'Agent ID: ' + a.id);
     row.dataset.idx = String(i);
     const av = document.createElement('div');
     av.className = 'm-avatar';
@@ -2712,7 +2818,6 @@ function closeMentionPopup() {
 }
 
 composerEl.addEventListener('input', () => {
-  sendBtn.disabled = composerEl.value.trim().length === 0;
   // Auto-grow
   composerEl.style.height = 'auto';
   composerEl.style.height = Math.min(180, composerEl.scrollHeight) + 'px';
@@ -2774,7 +2879,7 @@ composerEl.addEventListener('keydown', (e) => {
   }
   if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
     e.preventDefault();
-    formEl.requestSubmit();
+    handleSend();
   } else if (e.key === 'Escape' && turnInFlight) {
     e.preventDefault();
     abortTurn();
@@ -2797,8 +2902,7 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-formEl.addEventListener('submit', (e) => {
-  e.preventDefault();
+function handleSend() {
   const raw = composerEl.value;
   const trimmed = raw.trim();
   if (!trimmed) return;
@@ -2810,15 +2914,34 @@ formEl.addEventListener('submit', (e) => {
   sendMessage(trimmed);
   composerEl.value = '';
   composerEl.dispatchEvent(new Event('input'));
-});
+}
+
+sendBtn.addEventListener('click', handleSend);
+formEl.addEventListener('submit', (e) => { e.preventDefault(); handleSend(); });
 
 stopBtn.addEventListener('click', () => abortTurn());
 
+function makeClientMsgId() {
+  if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+    return window.crypto.randomUUID();
+  }
+  const bytes = new Uint8Array(16);
+  if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+    window.crypto.getRandomValues(bytes);
+  } else {
+    for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+  }
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
+}
+
 async function sendMessage(text, existingClientMsgId) {
-  const clientMsgId = existingClientMsgId || crypto.randomUUID();
+  const clientMsgId = existingClientMsgId || makeClientMsgId();
   if (!existingClientMsgId) appendUserBubble(text, { clientMsgId });
   try {
-    const res = await fetch(API + '/api/warroom/text/send' + Q, {
+    const res = await fetch(API + '/api/warroom/text/msg' + Q, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ meetingId: MEETING_ID, text, clientMsgId, chatId: CHAT_ID }),
@@ -3137,11 +3260,13 @@ async function runWarmupIntro(rosterForIntro) {
 // cold meeting where /history has not resolved yet.
 function getRoster() {
   if (roster && roster.length) return roster;
-  // Generic fallback: capitalize the id. Replaced by the real roster
-  // from the server once /history resolves.
-  return ['main', 'research', 'comms', 'content', 'ops'].map(function(id) {
-    return { id: id, name: id.charAt(0).toUpperCase() + id.slice(1) };
-  });
+  return [
+    { id: 'main', name: 'Ivonne' },
+    { id: 'research', name: 'Research' },
+    { id: 'comms', name: 'Comms' },
+    { id: 'content', name: 'Content' },
+    { id: 'ops', name: 'Ops' },
+  ];
 }
 
 async function loadHistoryThenConnect() {

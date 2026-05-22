@@ -165,7 +165,7 @@ export function claudeCodeHandoff(opts: {
   lines.push('  4. Paste this prompt:');
   lines.push('');
   lines.push('  ─────────────────────────────────────────────');
-  lines.push(`  I'm running ClaudeClaw on Windows. ${opts.what} failed.`);
+  lines.push(`  I'm running HansCorp on Windows. ${opts.what} failed.`);
   if (opts.error) {
     lines.push(`  The error was: ${opts.error}`);
   }

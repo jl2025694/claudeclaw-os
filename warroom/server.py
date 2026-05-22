@@ -1,5 +1,5 @@
 """
-War Room Voice Server for ClaudeClaw.
+War Room Voice Server for HansCorp.
 
 Two modes, selected by the WARROOM_MODE environment variable:
 
@@ -324,7 +324,7 @@ async def list_agents_handler(params):
     """Tool: list the sub-agents Gemini can delegate to, with one-line descriptions."""
     # Build roster from the dynamic agent list + hardcoded descriptions for known agents
     _known_descriptions = {
-        "main": "The Hand of the King. General ops, triage, defaults if unsure.",
+        "main": "Ivonne. The Hand of the King. General ops, triage, defaults if unsure.",
         "research": "Grand Maester. Web research, academic sources, competitive intel.",
         "comms": "Master of Whisperers. Email, Slack, Telegram, customer comms.",
         "content": "The Royal Bard. Writing, scripts, LinkedIn, YouTube, blog posts.",

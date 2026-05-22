@@ -88,6 +88,35 @@ export interface AgentConfig {
   meetBotName?: string;
 }
 
+const DEFAULT_AGENT_NAMES: Record<string, string> = {
+  main: 'Ivonne',
+  ops: 'Taylor',
+  comms: 'Charlie',
+  content: 'Jennifer',
+  research: 'Laura',
+};
+
+const DEFAULT_AGENT_ROLES: Record<string, string> = {
+  main: 'General ops',
+  ops: 'ops',
+  comms: 'comms',
+  content: 'content',
+  research: 'research',
+};
+
+export function agentDisplayName(agentId: string, name?: string): string {
+  const baseName = (name || DEFAULT_AGENT_NAMES[agentId] || agentId).trim();
+  return baseName.replace(/\s+-\s+[a-z0-9_-]+$/i, '');
+}
+
+export function agentRole(agentId: string): string {
+  return DEFAULT_AGENT_ROLES[agentId] || agentId;
+}
+
+export function formatAgentDisplayName(agentId: string, name?: string): string {
+  return agentDisplayName(agentId, name);
+}
+
 /**
  * Resolve the directory for a given agent, checking CLAUDECLAW_CONFIG first,
  * then falling back to PROJECT_ROOT/agents/<id>.
@@ -164,21 +193,7 @@ export function loadAgentConfig(agentId: string): AgentConfig {
     }
   }
 
-  let obsidian: AgentConfig['obsidian'];
-  const obsRaw = raw['obsidian'] as Record<string, unknown> | undefined;
-  if (obsRaw) {
-    const vault = obsRaw['vault'] as string;
-    if (vault && !fs.existsSync(vault)) {
-      // eslint-disable-next-line no-console
-      console.warn(`[${agentId}] WARNING: Obsidian vault path does not exist: ${vault}`);
-      console.warn(`[${agentId}] Update obsidian.vault in agent.yaml to your local vault path.`);
-    }
-    obsidian = {
-      vault,
-      folders: (obsRaw['folders'] as string[]) ?? [],
-      readOnly: (obsRaw['read_only'] as string[]) ?? [],
-    };
-  }
+  const obsidian = parseObsidianConfig(raw, agentId);
 
   const mcpServers = raw['mcp_servers'] as string[] | undefined;
   // War-room tool policy override. If present in agent.yaml, this list
@@ -201,6 +216,30 @@ export function loadAgentConfig(agentId: string): AgentConfig {
     obsidian,
     meetVoiceId,
     meetBotName,
+  };
+}
+
+export function loadAgentObsidianConfig(agentId: string): AgentConfig['obsidian'] {
+  const agentDir = resolveAgentDir(agentId);
+  const configPath = path.join(agentDir, 'agent.yaml');
+  if (!fs.existsSync(configPath)) return undefined;
+  const raw = yaml.load(fs.readFileSync(configPath, 'utf-8')) as Record<string, unknown>;
+  return parseObsidianConfig(raw, agentId);
+}
+
+function parseObsidianConfig(raw: Record<string, unknown>, agentId: string): AgentConfig['obsidian'] {
+  const obsRaw = raw['obsidian'] as Record<string, unknown> | undefined;
+  if (!obsRaw) return undefined;
+  const vault = obsRaw['vault'] as string;
+  if (vault && !fs.existsSync(vault)) {
+    // eslint-disable-next-line no-console
+    console.warn(`[${agentId}] WARNING: Obsidian vault path does not exist: ${vault}`);
+    console.warn(`[${agentId}] Update obsidian.vault in agent.yaml to your local vault path.`);
+  }
+  return {
+    vault,
+    folders: (obsRaw['folders'] as string[]) ?? [],
+    readOnly: (obsRaw['read_only'] as string[]) ?? [],
   };
 }
 
@@ -295,7 +334,7 @@ export function getAgentCapabilities(
 ): { name: string; description: string } | null {
   try {
     const config = loadAgentConfig(agentId);
-    return { name: config.name, description: config.description };
+    return { name: agentDisplayName(agentId, config.name), description: config.description };
   } catch {
     return null;
   }
@@ -327,7 +366,7 @@ export function listAllAgents(): Array<{
       const config = loadAgentConfig(id);
       result.push({
         id,
-        name: config.name,
+        name: agentDisplayName(id, config.name),
         description: config.description,
         model: config.model,
         provider: config.provider,
@@ -351,15 +390,50 @@ export function listAllAgents(): Array<{
  * server kills + respawns its subprocess when this changes if callers
  * want the new roster to take effect immediately.
  */
+// ── Agent groups ──────────────────────────────────────────────────────
+// Groups are stored in CLAUDECLAW_CONFIG/agent-groups.json so they
+// persist across deploys without touching individual agent.yaml files.
+
+const AGENT_GROUPS_FILE = path.join(CLAUDECLAW_CONFIG, 'agent-groups.json');
+
+let _groupsCache: Record<string, string> | null = null;
+let _groupsMtime = 0;
+
+/** Load agent-to-group mapping. Cached and auto-refreshed on file change. */
+export function loadAgentGroups(): Record<string, string> {
+  try {
+    const stat = fs.statSync(AGENT_GROUPS_FILE);
+    if (_groupsCache && stat.mtimeMs === _groupsMtime) return _groupsCache;
+    _groupsCache = JSON.parse(fs.readFileSync(AGENT_GROUPS_FILE, 'utf-8'));
+    _groupsMtime = stat.mtimeMs;
+    return _groupsCache!;
+  } catch {
+    return {};
+  }
+}
+
+/** Get the group for a specific agent. Returns undefined if unassigned. */
+export function getAgentGroup(agentId: string): string | undefined {
+  return loadAgentGroups()[agentId];
+}
+
+/** Update the entire groups mapping and write to disk. */
+export function saveAgentGroups(groups: Record<string, string>): void {
+  fs.writeFileSync(AGENT_GROUPS_FILE, JSON.stringify(groups, null, 2));
+  _groupsCache = groups;
+  _groupsMtime = Date.now();
+}
+
 export function refreshWarRoomRoster(): void {
   try {
     const ids = ['main', ...listAgentIds().filter((id) => id !== 'main')];
     const roster = ids.map((id) => {
       try {
+        if (id === 'main') return { id: 'main', name: agentDisplayName('main'), role: agentRole('main'), description: 'General ops and triage' };
         const cfg = loadAgentConfig(id);
-        return { id, name: cfg.name || capitalize(id), description: cfg.description || '' };
+        return { id, name: agentDisplayName(id, cfg.name || id), role: agentRole(id), description: cfg.description || '' };
       } catch {
-        return { id, name: capitalize(id), description: '' };
+        return { id, name: agentDisplayName(id), role: agentRole(id), description: '' };
       }
     });
     fs.writeFileSync(WARROOM_ROSTER_PATH, JSON.stringify(roster, null, 2));

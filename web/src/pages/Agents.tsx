@@ -24,11 +24,12 @@ interface Agent {
   running: boolean;
   todayTurns: number;
   todayCost: number;
+  group?: string;
 }
 
 interface Template { id: string; name: string; description: string; }
 
-export function Agents() {
+export function Agents({ filterGroup }: { filterGroup?: string } = {}) {
   const { data, loading, error, refresh } = useFetch<{ agents: Agent[] }>('/api/agents', 30_000);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -39,7 +40,10 @@ export function Agents() {
   const [refreshingSuggestions, setRefreshingSuggestions] = useState(false);
   const suggestionsFetch = useAgentSuggestions();
   const suggestions = suggestionsFetch.data?.suggestions ?? [];
-  const agents = data?.agents ?? [];
+  const allAgents = data?.agents ?? [];
+  const agents = filterGroup
+    ? allAgents.filter((a) => a.group === filterGroup)
+    : allAgents;
 
   async function refreshSuggestions() {
     setRefreshingSuggestions(true);
@@ -101,7 +105,7 @@ export function Agents() {
   return (
     <div class="flex flex-col h-full">
       <PageHeader
-        title="Agents"
+        title={filterGroup ? filterGroup.charAt(0).toUpperCase() + filterGroup.slice(1) : 'Agents'}
         actions={
           <>
             <span class="text-[11px] text-[var(--color-text-muted)] tabular-nums mr-2">
@@ -198,6 +202,7 @@ export function Agents() {
       <AgentDetail agent={detailAgent} onClose={() => setDetailAgent(null)} />
       <AgentSuggestionModal
         suggestion={openedSuggestion}
+        sourceAgentName={openedSuggestion ? agents.find((a) => a.id === openedSuggestion.from_agent)?.name : undefined}
         onClose={() => setOpenedSuggestion(null)}
         onActed={actOnSuggestion}
         onChange={suggestionsFetch.refresh}
@@ -263,7 +268,9 @@ function AgentCard({ agent, onChange, onOpen, suggestions, onOpenSuggestion }: {
 
   return (
     <div
-      class="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-4 hover:border-[var(--color-border-strong)] transition-colors cursor-pointer"
+      class="agent-id-tooltip bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-4 hover:border-[var(--color-border-strong)] transition-colors cursor-pointer"
+      data-agent-id-tooltip={`Agent ID: ${agent.id}`}
+      title={`Agent ID: ${agent.id}`}
       onClick={onOpen}
     >
       <div class="flex items-start gap-3 mb-3">
@@ -277,7 +284,7 @@ function AgentCard({ agent, onChange, onOpen, suggestions, onOpenSuggestion }: {
             <AgentSuggestionBadge agentId={agent.id} suggestions={suggestions} onOpen={onOpenSuggestion} />
           </div>
           <div class="text-[10px] text-[var(--color-text-faint)] uppercase tracking-wider">
-            {agent.id}
+            {agent.running ? 'Live' : 'Offline'}
           </div>
         </div>
       </div>
@@ -435,8 +442,8 @@ function CreateAgentWizard({ open, onClose, onCreated, prefill }: CreateAgentWiz
 
   const idValid = !!debouncedId && idCheck.data?.ok === true;
   const tokenValid = tokenStatus?.ok === true;
-  const suggestedBotName = `ClaudeClaw ${name || 'Agent'}`;
-  const suggestedBotUsername = `claudeclaw_${id || 'agent'}_bot`;
+  const suggestedBotName = `HansCorp ${name || 'Agent'}`;
+  const suggestedBotUsername = `hanscorp_${id || 'agent'}_bot`;
 
   async function create() {
     setCreating(true); setError(null);
@@ -689,4 +696,3 @@ function CopyButton({ text }: { text: string }) {
     </button>
   );
 }
-

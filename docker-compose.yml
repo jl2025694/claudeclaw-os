@@ -1,0 +1,28 @@
+services:
+  claudeclaw:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: claudeclaw-os
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      DASHBOARD_BIND: 0.0.0.0
+      DASHBOARD_PORT: 3141
+      DASHBOARD_URL: http://127.0.0.1:3141
+      CLAUDECLAW_CONFIG: /data/claudeclaw
+      HOME: /root
+      PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium
+      PUPPETEER_SKIP_DOWNLOAD: "true"
+    ports:
+      - "127.0.0.1:3141:3141"
+    volumes:
+      - ./.env:/app/.env
+      - ./store:/app/store
+      - ./workspace:/app/workspace
+      - ./logs:/app/logs
+      - ./.wwebjs_cache:/app/.wwebjs_cache
+      - ${HOME}/.claudeclaw:/data/claudeclaw
+      - ${HOME}/.claude:/root/.claude

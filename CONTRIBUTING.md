@@ -1,4 +1,4 @@
-# Contributing to ClaudeClaw
+# Contributing to HansCorp
 
 ## Adding a migration
 

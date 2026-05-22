@@ -3,6 +3,7 @@ import {
   Brain, Network, Activity, ShieldCheck,
   Swords,
   Settings,
+  Briefcase, Home, User,
 } from 'lucide-preact';
 import type { ComponentChildren } from 'preact';
 
@@ -24,6 +25,9 @@ export const ROUTES: RouteDef[] = [
   { path: '/scheduled',  label: 'Scheduled',       section: 'workspace',    icon: ListTodo,      shortcut: 'g s' },
   { path: '/agents',     label: 'Agents',          section: 'workspace',    icon: Users,         shortcut: 'g a' },
   { path: '/chat',       label: 'Chat',            section: 'workspace',    icon: MessageSquare, shortcut: 'g c' },
+  { path: '/groups/negocios', label: 'Negocios',   section: 'workspace',    icon: Briefcase,     shortcut: 'g n' },
+  { path: '/groups/familia',  label: 'Familia',    section: 'workspace',    icon: Home,          shortcut: 'g f' },
+  { path: '/groups/personal', label: 'Personal',   section: 'workspace',    icon: User,          shortcut: 'g p' },
 
   { path: '/memories',   label: 'Memories',        section: 'intelligence', icon: Brain,         shortcut: 'g e' },
   { path: '/hive',       label: 'Hive Mind',       section: 'intelligence', icon: Network,       shortcut: 'g h' },

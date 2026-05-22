@@ -9,6 +9,7 @@ import { renderMarkdown } from '@/lib/markdown';
 import { formatCost, formatNumber } from '@/lib/format';
 import { showCosts } from '@/lib/theme';
 import { subscribeChatStream, chatStreamConnected, resetUnread } from '@/lib/chat-stream';
+import { agentDisplayName } from '@/lib/agents';
 
 interface Turn { role: 'user' | 'assistant'; content: string; source?: string; created_at?: number; photoUrl?: string; photoCaption?: string; }
 interface Agent { id: string; name: string; running: boolean; }
@@ -159,6 +160,25 @@ export function Chat() {
     if (!message) return;
     setSending(true); setError(null); setProgressItems([]); setProgressLabel(null);
     try {
+      if (activeAgent !== 'all') {
+        const res = await apiPost<{ ok?: boolean; id?: string; error?: string }>('/api/chat/send', { message, agentId: activeAgent });
+        if (!res.ok && res.error) {
+          setError(res.error);
+        } else {
+          setTurns((prev) => [
+            ...prev,
+            { role: 'user', content: message, source: 'dashboard' },
+            {
+              role: 'assistant',
+              content: `Queued for @${activeAgent}. The agent will reply on Telegram when the mission finishes.`,
+              source: 'dashboard',
+            },
+          ]);
+          if (!textOverride) setDraft('');
+        }
+        return;
+      }
+
       const res = await apiPost<{ ok?: boolean; error?: string }>('/api/chat/send', { message });
       if (!res.ok && res.error) {
         setError(res.error === 'busy' ? 'A turn is already in flight. Wait for it to finish.' : res.error);
@@ -202,7 +222,7 @@ export function Chat() {
           <>
             <TabBtn label="All" active={activeAgent === 'all'} onClick={() => setActiveAgent('all')} />
             {agentList.map((a) => (
-              <TabBtn key={a.id} label={a.name || a.id} active={activeAgent === a.id} onClick={() => setActiveAgent(a.id)} live={a.running} />
+              <TabBtn key={a.id} label={a.name || agentDisplayName(a.id)} agentId={a.id} active={activeAgent === a.id} onClick={() => setActiveAgent(a.id)} live={a.running} />
             ))}
           </>
         }
@@ -213,7 +233,7 @@ export function Chat() {
         turnsToday={todayTurns}
         costToday={todayCost}
         model={activeAgent === 'all' ? health.data?.model : undefined}
-        agentLabel={activeAgentObj ? activeAgentObj.name || activeAgentObj.id : undefined}
+        agentLabel={activeAgentObj ? activeAgentObj.name || agentDisplayName(activeAgentObj.id) : undefined}
       />
 
       <div class="relative flex-1 min-h-0">
@@ -318,11 +338,13 @@ function SessionBar({
   );
 }
 
-function TabBtn({ label, active, onClick, live }: { label: string; active: boolean; onClick: () => void; live?: boolean }) {
+function TabBtn({ label, agentId, active, onClick, live }: { label: string; agentId?: string; active: boolean; onClick: () => void; live?: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      data-agent-id-tooltip={agentId ? `Agent ID: ${agentId}` : undefined}
+      title={agentId ? `Agent ID: ${agentId}` : undefined}
       class={[
         'inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[12px] transition-colors',
         active

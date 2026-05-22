@@ -82,32 +82,11 @@ export interface RosterAgent {
   description: string;
 }
 
-/** Resolve the main agent entry dynamically from config. */
-function resolveMainAgent(): RosterAgent {
-  try {
-    const cfg = loadAgentConfig('main');
-    return {
-      id: 'main',
-      name: cfg.name || resolveAgentDisplayName('main'),
-      description: cfg.description || 'General ops and triage',
-    };
-  } catch {
-    return {
-      id: 'main',
-      name: resolveAgentDisplayName('main'),
-      description: 'General ops and triage',
-    };
-  }
-}
-
-/** Resolve display name for an agent from the roster, with fallback. */
-function agentLabel(agentId: string, rosterById?: Map<string, RosterAgent>): string {
-  if (rosterById) {
-    const entry = rosterById.get(agentId);
-    if (entry) return entry.name;
-  }
-  return resolveAgentDisplayName(agentId);
-}
+const MAIN_AGENT: RosterAgent = {
+  id: 'main',
+  name: 'Ivonne',
+  description: 'General ops and triage',
+};
 
 /**
  * Full roster for a text War Room. Main is always first. Other agents
@@ -326,7 +305,7 @@ export async function handleTextTurn(
         type: 'status_update',
         turnId,
         phase: 'starting',
-        label: 'Starting Main…',
+        label: 'Starting Ivonne…',
         agentId: 'main',
       });
       decision = {
@@ -1534,7 +1513,7 @@ async function runAgentTurn(args: RunAgentTurnArgs): Promise<string> {
     type: 'status_update',
     turnId,
     phase: 'streaming',
-    label: `${agentLabel(agentId)} is typing…`,
+    label: `${agentId === 'main' ? 'Ivonne' : agentId} is typing…`,
     agentId,
   });
 
@@ -1763,7 +1742,7 @@ async function runAgentTurn(args: RunAgentTurnArgs): Promise<string> {
               channel.emit({
                 type: 'system_note',
                 turnId,
-                text: `${agentLabel(agentId)} hit the per-turn tool budget (${TOOL_BUDGET_PER_TURN} calls). Asking them to wrap up.`,
+                text: `${agentId === 'main' ? 'Ivonne' : agentId} hit the per-turn tool budget (${TOOL_BUDGET_PER_TURN} calls). Asking them to wrap up.`,
                 tone: 'warn',
                 dismissable: true,
               });
@@ -1930,7 +1909,7 @@ async function runAgentTurn(args: RunAgentTurnArgs): Promise<string> {
       reason: timedOut ? 'agent timed out' : (incomplete ? 'cancelled before content' : 'no content'),
     });
     if (role === 'primary') {
-      const displayLabel = agentLabel(agentId);
+      const agentLabel = agentId === 'main' ? 'Ivonne' : agentId;
       // Build a richer fallback when we know the agent ran out of headroom
       // mid-tool-loop. Empty text + tool calls + max_turns stop reason =
       // "did real work, ran out of room before finalizing." Surface what

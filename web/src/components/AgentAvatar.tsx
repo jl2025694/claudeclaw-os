@@ -39,11 +39,14 @@ export function AgentAvatar({ agentId, name, size = 36, running, cacheBust }: Pr
     .toUpperCase();
 
   const ringColor = running ? 'var(--color-status-done)' : 'var(--color-text-faint)';
+  const tooltip = `Agent ID: ${agentId}`;
 
   if (!imageOk) {
     return (
       <div
-        class="rounded-full flex items-center justify-center font-semibold shrink-0"
+        class="agent-id-tooltip agent-avatar-id-tooltip rounded-full flex items-center justify-center font-semibold shrink-0"
+        data-agent-id-tooltip={tooltip}
+        title={tooltip}
         style={{
           width: size + 'px',
           height: size + 'px',
@@ -60,19 +63,30 @@ export function AgentAvatar({ agentId, name, size = 36, running, cacheBust }: Pr
 
   const cacheBustParam = cacheBust !== undefined ? `&v=${encodeURIComponent(String(cacheBust))}` : '';
   return (
-    <img
-      src={`/api/agents/${encodeURIComponent(agentId)}/avatar?token=${encodeURIComponent(dashboardToken)}${cacheBustParam}`}
-      alt={name || agentId}
-      class="rounded-full shrink-0 object-cover"
+    <span
+      class="agent-id-tooltip agent-avatar-id-tooltip rounded-full shrink-0"
+      data-agent-id-tooltip={tooltip}
+      title={tooltip}
       style={{
         width: size + 'px',
         height: size + 'px',
+        display: 'inline-flex',
         boxShadow: running ? 'inset 0 0 0 1px ' + ringColor : 'none',
       }}
-      onError={() => {
-        FAILED_AVATARS.add(agentId);
-        setImageOk(false);
-      }}
-    />
+    >
+      <img
+        src={`/api/agents/${encodeURIComponent(agentId)}/avatar?token=${encodeURIComponent(dashboardToken)}${cacheBustParam}`}
+        alt={name || agentId}
+        class="rounded-full object-cover"
+        style={{
+          width: size + 'px',
+          height: size + 'px',
+        }}
+        onError={() => {
+          FAILED_AVATARS.add(agentId);
+          setImageOk(false);
+        }}
+      />
+    </span>
   );
 }

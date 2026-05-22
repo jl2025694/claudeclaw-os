@@ -1,10 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 
-import { loadAgentConfig, listAgentIds, resolveAgentDir, resolveAgentClaudeMd, resolveInstructionMd, refreshWarRoomRoster } from './agent-config.js';
+import { loadAgentConfig, loadAgentObsidianConfig, listAgentIds, resolveAgentDir, resolveAgentClaudeMd, refreshWarRoomRoster } from './agent-config.js';
 import { createBot } from './bot.js';
 import { checkPendingMigrations } from './migrations.js';
-import { ALLOWED_CHAT_ID, activeBotToken, STORE_DIR, PROJECT_ROOT, CLAUDECLAW_CONFIG, GOOGLE_API_KEY, setAgentOverrides, SECURITY_PIN_HASH, IDLE_LOCK_MINUTES, EMERGENCY_KILL_PHRASE, WARROOM_ENABLED, WARROOM_PORT } from './config.js';
+import { ALLOWED_CHAT_ID, activeBotToken, STORE_DIR, PROJECT_ROOT, CLAUDECLAW_CONFIG, GOOGLE_API_KEY, MEMORY_CONSOLIDATION_ENABLED, setAgentOverrides, SECURITY_PIN_HASH, IDLE_LOCK_MINUTES, EMERGENCY_KILL_PHRASE, WARROOM_ENABLED, WARROOM_PORT } from './config.js';
 import { startDashboard } from './dashboard.js';
 import { initDatabase, cleanupOldMissionTasks, insertAuditLog } from './db.js';
 import { initSecurity, setAuditCallback } from './security.js';
@@ -70,8 +70,8 @@ if (AGENT_ID !== 'main') {
       setAgentOverrides({
         agentId: 'main',
         botToken: activeBotToken,
-        cwd: mainAgentDir ?? PROJECT_ROOT,
-        provider: getMainProviderConfig(),
+        cwd: PROJECT_ROOT,
+        obsidian: loadAgentObsidianConfig('main'),
         systemPrompt,
       });
       logger.info({ source: claudeMdSource, cwd: mainAgentDir ?? PROJECT_ROOT }, 'Loaded main agent CLAUDE.md');
@@ -92,7 +92,7 @@ function showBanner(): void {
     const banner = fs.readFileSync(bannerPath, 'utf-8');
     console.log('\n' + banner);
   } catch {
-    console.log('\n  ClaudeClaw\n');
+    console.log('\n  HansCorp\n');
   }
 }
 
@@ -149,6 +149,7 @@ async function main(): Promise<void> {
     pinHash: SECURITY_PIN_HASH || undefined,
     idleLockMinutes: IDLE_LOCK_MINUTES,
     killPhrase: EMERGENCY_KILL_PHRASE || undefined,
+    statePath: path.join(STORE_DIR, 'security-state.json'),
   });
   setAuditCallback((entry) => {
     insertAuditLog(entry.agentId, entry.chatId, entry.action, entry.detail, entry.blocked);
@@ -171,7 +172,7 @@ async function main(): Promise<void> {
     runWarroomAvatarMigration();
 
     // Memory consolidation: find patterns across recent memories every 30 minutes
-    if (ALLOWED_CHAT_ID && GOOGLE_API_KEY) {
+    if (ALLOWED_CHAT_ID && GOOGLE_API_KEY && MEMORY_CONSOLIDATION_ENABLED) {
       // Delay first consolidation 2 minutes after startup to let things settle
       setTimeout(() => {
         void runConsolidation(ALLOWED_CHAT_ID).catch((err) =>
@@ -184,6 +185,8 @@ async function main(): Promise<void> {
         );
       }, 30 * 60 * 1000);
       logger.info('Memory consolidation enabled (every 30 min)');
+    } else if (!MEMORY_CONSOLIDATION_ENABLED) {
+      logger.info('Memory consolidation disabled by MEMORY_CONSOLIDATION_ENABLED=false');
     }
   } else {
     logger.info({ agentId: AGENT_ID }, 'Skipping decay/consolidation (main process owns these)');
@@ -404,10 +407,10 @@ async function main(): Promise<void> {
   process.on('SIGINT', () => void shutdown());
   process.on('SIGTERM', () => void shutdown());
 
-  logger.info({ agentId: AGENT_ID }, 'Starting ClaudeClaw...');
+  logger.info({ agentId: AGENT_ID }, 'Starting HansCorp...');
 
   // Clear any existing webhook so polling works cleanly (e.g., if token was
-  // previously used with a webhook-based bot or another ClaudeClaw instance).
+  // previously used with a webhook-based bot or another HansCorp instance).
   try {
     await bot.api.deleteWebhook({ drop_pending_updates: false });
   } catch (err) {
@@ -417,16 +420,16 @@ async function main(): Promise<void> {
   await bot.start({
     onStart: (botInfo) => {
       setTelegramConnected(true);
-      setBotInfo(botInfo.username ?? '', botInfo.first_name ?? 'ClaudeClaw');
-      logger.info({ username: botInfo.username }, 'ClaudeClaw is running');
+      setBotInfo(botInfo.username ?? '', botInfo.first_name ?? 'HansCorp');
+      logger.info({ username: botInfo.username }, 'HansCorp is running');
       if (AGENT_ID === 'main') {
-        console.log(`\n  ClaudeClaw online: @${botInfo.username}`);
+        console.log(`\n  HansCorp online: @${botInfo.username}`);
         if (!ALLOWED_CHAT_ID) {
           console.log(`  Send /chatid to get your chat ID for ALLOWED_CHAT_ID`);
         }
         console.log();
       } else {
-        console.log(`\n  ClaudeClaw agent [${AGENT_ID}] online: @${botInfo.username}\n`);
+        console.log(`\n  HansCorp agent [${AGENT_ID}] online: @${botInfo.username}\n`);
       }
     },
   });

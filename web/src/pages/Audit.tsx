@@ -3,7 +3,9 @@ import { ShieldAlert, ShieldCheck } from 'lucide-preact';
 import { PageHeader, Tab } from '@/components/PageHeader';
 import { PageState } from '@/components/PageState';
 import { apiGet } from '@/lib/api';
-import { formatRelativeTime, resolveAgentName } from '@/lib/format';
+import { formatRelativeTime } from '@/lib/format';
+import { useFetch } from '@/lib/useFetch';
+import { agentDisplayName } from '@/lib/agents';
 
 interface AuditEntry {
   id: number;
@@ -25,6 +27,7 @@ export function Audit() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const agents = useFetch<{ agents: { id: string; name?: string }[] }>('/api/agents', 60_000);
   // Sticky union of every agent_id we've ever seen in this session, so
   // narrowing the filter to a single agent doesn't make the other chips
   // disappear (the previous version derived chips from the currently
@@ -59,6 +62,7 @@ export function Audit() {
   }
 
   const agentIds = knownAgents;
+  const agentName = (id: string) => agents.data?.agents?.find((a) => a.id === id)?.name || agentDisplayName(id);
 
   return (
     <div class="flex flex-col h-full">
@@ -74,7 +78,7 @@ export function Audit() {
                 <span class="mx-1 text-[var(--color-text-faint)]">·</span>
                 <Tab label="Any agent" active={agentFilter === 'all'} onClick={() => setAgentFilter('all')} />
                 {agentIds.map((id) => (
-                  <Tab key={id} label={resolveAgentName(id)} active={agentFilter === id} onClick={() => setAgentFilter(id)} />
+                  <Tab key={id} label={agentName(id)} active={agentFilter === id} onClick={() => setAgentFilter(id)} />
                 ))}
               </>
             )}
@@ -106,7 +110,7 @@ export function Audit() {
                   <td class="px-6 py-2 text-[var(--color-text-faint)] tabular-nums whitespace-nowrap">
                     {formatRelativeTime(e.created_at)}
                   </td>
-                  <td class="px-3 py-2 text-[var(--color-text-muted)]">{resolveAgentName(e.agent_id)}</td>
+                  <td class="px-3 py-2 text-[var(--color-text-muted)]">{agentName(e.agent_id)}</td>
                   <td class="px-3 py-2 font-mono text-[11px] text-[var(--color-text)]">{e.action}</td>
                   <td class="px-3 py-2 text-center">
                     {e.blocked === 1 ? (

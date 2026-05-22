@@ -44,7 +44,7 @@ function printWindowsHandoff(what: string, err?: string, file?: string): void {
   console.log(`  ${c.bold}4.${c.reset} Paste this prompt:`);
   console.log();
   console.log(`  ${c.gray}─────────────────────────────────────────────${c.reset}`);
-  console.log(`  ${c.white}I'm running ClaudeClaw on Windows. ${what} failed.${c.reset}`);
+  console.log(`  ${c.white}I'm running HansCorp on Windows. ${what} failed.${c.reset}`);
   if (err) console.log(`  ${c.white}The error was: ${err}${c.reset}`);
   if (file) console.log(`  ${c.white}Start by reading ${file} and adapt it to my machine.${c.reset}`);
   else console.log(`  ${c.white}Adapt the Windows paths in this repo to work on my machine.${c.reset}`);
@@ -63,7 +63,7 @@ function loadBanner(): string {
   try {
     return fs.readFileSync(path.join(PROJECT_ROOT, 'banner.txt'), 'utf-8');
   } catch {
-    return '\n  ClaudeClaw\n';
+    return '\n  HansCorp\n';
   }
 }
 
@@ -409,19 +409,19 @@ async function main() {
 
   // ── 1. Banner + intro ────────────────────────────────────────────────────
   console.log(`${c.cyan}${c.bold}${loadBanner()}${c.reset}`);
-  console.log(`  ${c.bold}Welcome to ClaudeClaw.${c.reset}`);
+  console.log(`  ${c.bold}Welcome to HansCorp.${c.reset}`);
   console.log();
   info('This wizard will get you set up in about 5 minutes.');
   info('Press Ctrl+C at any time to exit. You can re-run this at any time with: npm run setup');
   console.log();
 
-  // ── 2. What is ClaudeClaw ────────────────────────────────────────────────
-  section('What is ClaudeClaw?');
+  // ── 2. What is HansCorp ────────────────────────────────────────────────
+  section('What is HansCorp?');
 
-  console.log(`  ClaudeClaw bridges ${c.bold}Claude Code${c.reset} to Telegram.`);
-  console.log(`  You message your bot from your phone. ClaudeClaw runs Claude`);
-  console.log(`  on your computer — with your skills, tools, and context —`);
-  console.log(`  and sends the result back to you.`);
+  console.log(`  HansCorp bridges your Claude Code CLI to Telegram.`);
+  console.log(`  You message your bot from your phone. HansCorp runs the`);
+  console.log(`  ${c.bold}actual${c.reset} ${c.cyan}claude${c.reset} CLI on your computer — with all your skills,`);
+  console.log(`  tools, and context — and sends the result back to you.`);
   console.log();
   console.log(`  ${c.bold}It is not a chatbot wrapper.${c.reset} It runs a real local provider.`);
   console.log(`  Everything you can do in your terminal, you can do from your phone.`);
@@ -439,12 +439,12 @@ async function main() {
   console.log(`  ${c.bold}FAQ${c.reset}`);
   console.log();
   console.log(`  ${c.cyan}Q:${c.reset} Does this cost anything?`);
-  info('ClaudeClaw itself is free. Authenticate Claude on this machine via');
-  info('claude login (any plan), or set ANTHROPIC_API_KEY for pay-per-token.');
-  info('Optional features (voice, video) have their own free tiers.');
+  info('HansCorp itself is free. You need a Claude Code subscription (Max plan)');
+  info('or an Anthropic API key. Optional features (voice, video) have their own');
+  info('free tiers. Nothing is billed without your API keys.');
   console.log();
   console.log(`  ${c.cyan}Q:${c.reset} Does my computer need to stay on?`);
-  info('Yes. ClaudeClaw runs on your machine. When your computer sleeps or shuts');
+  info('Yes. HansCorp runs on your machine. When your computer sleeps or shuts');
   info('down, the bot goes offline. Messages queue in Telegram and arrive when');
   info('you restart.');
   console.log();
@@ -480,8 +480,8 @@ async function main() {
       info('To set up under WSL2:');
       info('  1. Open PowerShell as Administrator');
       console.log(`  ${c.cyan}  wsl --install -d Ubuntu${c.reset}`);
-      info('  2. Reboot, then open the Ubuntu terminal');
-      info('  3. Clone ClaudeClaw inside the Ubuntu filesystem (not /mnt/c)');
+      info('  2. Reboot, open the Ubuntu terminal');
+      info('  3. Re-clone HansCorp inside the Ubuntu filesystem (NOT /mnt/c)');
       info('  4. Run "npm run setup" from the new clone');
       process.exit(0);
     }
@@ -585,7 +585,7 @@ async function main() {
   // ── 4. What do you want to enable? ──────────────────────────────────────
   section('Choose your features');
 
-  info('ClaudeClaw OS has several optional features. Tell us what you want.');
+  info('HansCorp OS has several optional features. Tell us what you want.');
   info('You can always add more later by editing .env and restarting.');
   console.log();
 
@@ -602,7 +602,7 @@ async function main() {
     console.log();
     console.log(`  ${c.bold}How the WhatsApp bridge works:${c.reset}`);
     console.log();
-    info('ClaudeClaw uses whatsapp-web.js to connect to your existing WhatsApp');
+    info('HansCorp uses whatsapp-web.js to connect to your existing WhatsApp');
     info('account via the Linked Devices feature (same as WhatsApp Web).');
     console.log();
     info('A separate process (wa-daemon) runs in the background:');
@@ -979,7 +979,7 @@ async function main() {
   // ── 7. Skills to install ─────────────────────────────────────────────────
   section('Skills you might want');
 
-  info('ClaudeClaw auto-loads every skill in ~/.claude/skills/.');
+  info('HansCorp auto-loads every skill in ~/.claude/skills/.');
   info('Here are the most useful ones to install:');
   console.log();
 
@@ -994,7 +994,7 @@ async function main() {
   if (wantVideo) {
     console.log(`  ${c.bold}Gemini skill (required for video analysis):${c.reset}`);
     console.log();
-    info('ClaudeClaw\'s video analysis uses the gemini-api-dev skill from Google.');
+    info('HansCorp\'s video analysis uses the gemini-api-dev skill from Google.');
     info('It handles text, images, audio, video, function calling, and structured output.');
     info('Install it from: https://github.com/google-gemini/gemini-skills');
     console.log();
@@ -1102,7 +1102,7 @@ async function main() {
   // ── 9. Security ──────────────────────────────────────────────────────────
   section('Secure your bot');
 
-  info('ClaudeClaw has full access to your machine. If someone gets into');
+  info('HansCorp has full access to your machine. If someone gets into');
   info('your Telegram account, they control the bot. These layers protect you.');
   console.log();
 
@@ -1148,7 +1148,7 @@ async function main() {
       // Idle timeout (only ask when PIN is set)
       console.log();
       info('Auto-lock re-locks the bot after a period of inactivity.');
-      const idleMin = await ask('Lock after how many minutes idle?', '30');
+      const idleMin = await ask('Lock after how many minutes idle?', '720');
       const idleVal = parseInt(idleMin) || 0;
       if (idleVal > 0) {
         env.IDLE_LOCK_MINUTES = String(idleVal);
@@ -1234,7 +1234,7 @@ async function main() {
   // ── 11. Optional Claude API key ───────────────────────────────────────────
   section('Claude authentication');
 
-  info('By default, ClaudeClaw uses your existing claude login (Max plan).');
+  info('By default, HansCorp uses your existing claude login (Max plan).');
   info('This is fine for personal use on your own machine.');
   console.log();
   info('Set an API key if you\'re deploying on a server, or want pay-per-token');
@@ -1254,7 +1254,7 @@ async function main() {
   await sleep(300);
 
   const lines = [
-    '# ClaudeClaw — generated by setup wizard',
+    '# HansCorp — generated by setup wizard',
     '# Edit freely. Re-run: npm run setup',
     '',
     '# ── Required ──────────────────────────────────────────────────',
@@ -1288,7 +1288,7 @@ async function main() {
     '',
     '# ── Security ──────────────────────────────────────────────────',
     env.SECURITY_PIN_HASH ? `SECURITY_PIN_HASH=${env.SECURITY_PIN_HASH}` : '# SECURITY_PIN_HASH=',
-    env.IDLE_LOCK_MINUTES ? `IDLE_LOCK_MINUTES=${env.IDLE_LOCK_MINUTES}` : '# IDLE_LOCK_MINUTES=30',
+    env.IDLE_LOCK_MINUTES ? `IDLE_LOCK_MINUTES=${env.IDLE_LOCK_MINUTES}` : '# IDLE_LOCK_MINUTES=720',
     env.EMERGENCY_KILL_PHRASE ? `EMERGENCY_KILL_PHRASE=${env.EMERGENCY_KILL_PHRASE}` : '# EMERGENCY_KILL_PHRASE=',
     '',
     '# ── Database Encryption ───────────────────────────────────────',
@@ -1352,7 +1352,7 @@ async function main() {
   // ── 15. Multi-agent setup (optional) ────────────────────────────────────
   section('Agent team (optional)');
 
-  info('ClaudeClaw can run specialist agents alongside the main bot.');
+  info('HansCorp can run specialist agents alongside the main bot.');
   info('Each agent is its own Telegram bot with a focused role, its own');
   info('context window, and its own chat on your phone.');
   console.log();
@@ -1543,7 +1543,7 @@ async function main() {
   // ── 16. Summary ───────────────────────────────────────────────────────────
   console.log();
   console.log(`  ${c.cyan}╔════════════════════════════════════════════╗${c.reset}`);
-  console.log(`  ${c.cyan}║${c.reset}${c.bold}           ClaudeClaw is ready!             ${c.reset}${c.cyan}║${c.reset}`);
+  console.log(`  ${c.cyan}║${c.reset}${c.bold}           HansCorp is ready!             ${c.reset}${c.cyan}║${c.reset}`);
   console.log(`  ${c.cyan}╚════════════════════════════════════════════╝${c.reset}`);
   console.log();
 
@@ -1573,7 +1573,7 @@ async function main() {
     } else {
       ok('Build complete');
       console.log();
-      info('Starting ClaudeClaw... (press Ctrl+C to stop)');
+      info('Starting HansCorp... (press Ctrl+C to stop)');
       console.log();
       // Close readline before handing off to the bot process
       rl.close();
@@ -1672,7 +1672,7 @@ async function setupLinux() {
     const serviceDir = path.join(os.homedir(), '.config', 'systemd', 'user');
     const servicePath = path.join(serviceDir, 'claudeclaw.service');
     const service = `[Unit]
-Description=ClaudeClaw Telegram Bot
+Description=HansCorp Telegram Bot
 After=network.target
 
 [Service]
@@ -1706,8 +1706,16 @@ WantedBy=default.target
 async function setupWindows() {
   section('Auto-start (Windows)');
 
-  info('Windows Task Scheduler is the recommended way to auto-start ClaudeClaw.');
-  info('It runs at logon, requires no elevated privileges, and has no extra dependencies.');
+  warn('Windows detected. WSL2 is the smoother path, but native works too.');
+  console.log();
+  info('A: WSL2 (recommended if you haven\'t started yet).');
+  info('  Run "wsl --install -d Ubuntu" in an elevated PowerShell, reboot,');
+  info('  clone HansCorp inside the Ubuntu filesystem (not /mnt/c), and');
+  info('  re-run this setup from inside WSL2. Keep ~/.claude/ inside WSL2.');
+  console.log();
+  info('B: Native Windows (Task Scheduler).');
+  info('  Registers a per-user scheduled task that runs at logon.');
+  info('  No admin rights needed. Logs go to logs\\main.log.');
   console.log();
 
   // Check if PM2 is already installed (offer as alternative for users who prefer it)
@@ -1783,7 +1791,7 @@ async function setupWindows() {
 
     const q = (v: string) => `"${v.replace(/"/g, '""')}"`;
     const bat = `@echo off\r
-REM ClaudeClaw main bot wrapper\r
+REM HansCorp main bot wrapper\r
 set NODE_ENV=production\r
 cd /d ${q(PROJECT_ROOT)}\r
 if not exist ${q(logsDir)} mkdir ${q(logsDir)}\r
@@ -1814,8 +1822,12 @@ ${q(process.execPath)} ${q(entry)} >> ${q(logFile)} 2>&1\r
   } catch (err) {
     s.stop('warn', 'Could not register scheduled task automatically');
     const errMsg = err instanceof Error ? err.message : String(err);
-    printWindowsHandoff('Installing the ClaudeClaw auto-start scheduled task', errMsg, 'scripts/setup.ts (setupWindows function)');
-    info('You can start the bot manually with: npm start');
+    printWindowsHandoff('Installing the HansCorp auto-start scheduled task', errMsg, 'scripts/setup.ts (setupWindows function)');
+    info('Quick manual fallback if you prefer: start with "npm start" in a terminal,');
+    info('or use PM2:');
+    console.log(`  ${c.cyan}npm install -g pm2${c.reset}`);
+    console.log(`  ${c.cyan}pm2 start dist/index.js --name claudeclaw${c.reset}`);
+    console.log(`  ${c.cyan}pm2 save && pm2 startup${c.reset}`);
   }
 }
 

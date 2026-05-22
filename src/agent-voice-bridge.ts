@@ -2,7 +2,7 @@
  * Agent Voice Bridge
  *
  * Lightweight CLI script that the War Room Pipecat server calls to invoke
- * a ClaudeClaw agent via the Claude Code SDK and return the text response.
+ * a HansCorp agent via the Claude Code SDK and return the text response.
  *
  * Usage: node dist/agent-voice-bridge.js --agent research --message "What did you find?"
  *

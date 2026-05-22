@@ -25,6 +25,7 @@ workspace/
 migrations/.applied.json
 
 # Logs
+logs/
 *.log
 /tmp/claudeclaw.*
 

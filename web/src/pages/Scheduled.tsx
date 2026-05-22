@@ -12,6 +12,7 @@ import { formatRelativeTime, resolveAgentName } from '@/lib/format';
 import { privacyBlur } from '@/lib/privacy';
 import { pushToast } from '@/lib/toasts';
 import { describeCron } from '@/lib/cron';
+import { agentDisplayName } from '@/lib/agents';
 
 interface ScheduledTask {
   id: string;
@@ -50,6 +51,7 @@ function loadView(): ViewMode {
 
 export function Scheduled() {
   const { data, loading, error, refresh } = useFetch<{ tasks: ScheduledTask[] }>('/api/tasks', 30_000);
+  const agents = useFetch<{ agents: { id: string; name?: string }[] }>('/api/agents', 60_000);
   const tasks = data?.tasks ?? [];
   const [view, setView] = useState<ViewMode>(loadView());
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -127,6 +129,7 @@ export function Scheduled() {
   }
 
   const allSelected = tasks.length > 0 && selected.size === tasks.length;
+  const agentName = (id: string) => agents.data?.agents?.find((a) => a.id === id)?.name || agentDisplayName(id);
 
   return (
     <div class="flex flex-col h-full">
@@ -176,6 +179,7 @@ export function Scheduled() {
                 onAction={(a) => action(t, a)}
                 onDeleteRequest={() => { setPendingSingle(t); setConfirmOpen('single'); }}
                 onEdit={() => setEditing(t)}
+                agentName={agentName(t.agent_id)}
               />
             ))}
           </div>
@@ -216,6 +220,7 @@ export function Scheduled() {
                   onAction={(a) => action(t, a)}
                   onDeleteRequest={() => { setPendingSingle(t); setConfirmOpen('single'); }}
                   onEdit={() => setEditing(t)}
+                  agentName={agentName(t.agent_id)}
                 />
               ))}
             </tbody>
@@ -295,9 +300,10 @@ interface RowProps {
   onAction: (a: 'pause' | 'resume') => void;
   onDeleteRequest: () => void;
   onEdit: () => void;
+  agentName: string;
 }
 
-function TaskCard({ task, blurOn, selected, onToggleSelect, onAction, onDeleteRequest, onEdit }: RowProps) {
+function TaskCard({ task, blurOn, selected, onToggleSelect, onAction, onDeleteRequest, onEdit, agentName }: RowProps) {
   const [showResult, setShowResult] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const statusTone = task.status === 'running' ? 'running' : task.status === 'paused' ? 'cancelled' : 'done';
@@ -335,7 +341,7 @@ function TaskCard({ task, blurOn, selected, onToggleSelect, onAction, onDeleteRe
               <span class="text-[var(--color-accent)] tabular-nums">{formatCountdown(task.next_run)}</span>
             )}
             <Pill tone={statusTone}>{task.status}</Pill>
-            {task.agent_id !== 'main' && <span class="font-mono">@{resolveAgentName(task.agent_id)}</span>}
+            {task.agent_id !== 'main' && <span>{agentName}</span>}
             {task.last_status && (
               <Pill tone={task.last_status === 'success' ? 'done' : task.last_status === 'timeout' ? 'medium' : 'failed'}>
                 last: {task.last_status}
@@ -368,7 +374,7 @@ function TaskCard({ task, blurOn, selected, onToggleSelect, onAction, onDeleteRe
   );
 }
 
-function TaskListRow({ task, blurOn, selected, onToggleSelect, onAction, onDeleteRequest, onEdit }: RowProps) {
+function TaskListRow({ task, blurOn, selected, onToggleSelect, onAction, onDeleteRequest, onEdit, agentName }: RowProps) {
   const [revealed, setRevealed] = useState(false);
   const statusTone = task.status === 'running' ? 'running' : task.status === 'paused' ? 'cancelled' : 'done';
   const blurClass = blurOn && !revealed ? 'privacy-blur' : (blurOn && revealed ? 'privacy-blur revealed' : '');
@@ -408,8 +414,8 @@ function TaskListRow({ task, blurOn, selected, onToggleSelect, onAction, onDelet
           </Pill>
         )}
       </td>
-      <td class="px-3 py-2.5 font-mono text-[11px] text-[var(--color-text-muted)] whitespace-nowrap">
-        @{resolveAgentName(task.agent_id)}
+      <td class="px-3 py-2.5 text-[11px] text-[var(--color-text-muted)] whitespace-nowrap">
+        {agentName}
       </td>
       <td class="px-3 py-2.5 text-right whitespace-nowrap">
         <RowActions task={task} onAction={onAction} onDeleteRequest={onDeleteRequest} />

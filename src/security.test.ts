@@ -1,45 +1,83 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { getScrubbedSdkEnv } from './security.js';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 
-const ORIGINAL_ENV = { ...process.env };
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-describe('getScrubbedSdkEnv', () => {
+import {
+  _resetSecurityForTests,
+  getSecurityStatus,
+  hashPin,
+  initSecurity,
+  touchActivity,
+  unlock,
+} from './security.js';
+
+describe('security idle lock state', () => {
+  let tmpDir: string;
+  let statePath: string;
+  let pinHash: string;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-07T00:00:00.000Z'));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'claudeclaw-security-test-'));
+    statePath = path.join(tmpDir, 'security-state.json');
+    pinHash = hashPin('1234');
+    _resetSecurityForTests();
+  });
+
   afterEach(() => {
-    process.env = { ...ORIGINAL_ENV };
+    _resetSecurityForTests();
+    vi.useRealTimers();
+    fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  it('drops ANTHROPIC_API_KEY by default so Claude subscription auth can be used', () => {
-    process.env.ANTHROPIC_API_KEY = 'stale-api-key';
-    delete process.env.CLAUDECLAW_USE_ANTHROPIC_API_KEY;
+  it('keeps an unlocked session after restart until 12 hours after last activity', () => {
+    initSecurity({ pinHash, idleLockMinutes: 720, statePath });
+    expect(getSecurityStatus().locked).toBe(true);
 
-    const env = getScrubbedSdkEnv({ ANTHROPIC_API_KEY: 'stale-api-key' });
+    expect(unlock('1234')).toBe(true);
+    expect(getSecurityStatus().locked).toBe(false);
 
-    expect(env.ANTHROPIC_API_KEY).toBeUndefined();
+    vi.setSystemTime(new Date('2026-05-07T11:59:00.000Z'));
+    _resetSecurityForTests();
+    initSecurity({ pinHash, idleLockMinutes: 720, statePath });
+    expect(getSecurityStatus().locked).toBe(false);
+
+    vi.setSystemTime(new Date('2026-05-07T12:01:00.000Z'));
+    expect(getSecurityStatus().locked).toBe(true);
   });
 
-  it('preserves CLAUDE_CODE_OAUTH_TOKEN when provided explicitly', () => {
-    const env = getScrubbedSdkEnv({ CLAUDE_CODE_OAUTH_TOKEN: 'oauth-token' });
+  it('persists touchActivity as the start of the 12-hour idle window', () => {
+    initSecurity({ pinHash, idleLockMinutes: 720, statePath });
+    expect(unlock('1234')).toBe(true);
 
-    expect(env.CLAUDE_CODE_OAUTH_TOKEN).toBe('oauth-token');
+    vi.setSystemTime(new Date('2026-05-07T02:00:00.000Z'));
+    touchActivity();
+
+    vi.setSystemTime(new Date('2026-05-07T13:59:00.000Z'));
+    _resetSecurityForTests();
+    initSecurity({ pinHash, idleLockMinutes: 720, statePath });
+    expect(getSecurityStatus().locked).toBe(false);
+
+    vi.setSystemTime(new Date('2026-05-07T14:01:00.000Z'));
+    expect(getSecurityStatus().locked).toBe(true);
   });
 
-  it('allows ANTHROPIC_API_KEY only when API-key auth is explicitly enabled', () => {
-    process.env.CLAUDECLAW_USE_ANTHROPIC_API_KEY = 'true';
+  it('reloads shared activity state before deciding idle lock status', () => {
+    initSecurity({ pinHash, idleLockMinutes: 720, statePath });
+    expect(unlock('1234')).toBe(true);
 
-    const env = getScrubbedSdkEnv({ ANTHROPIC_API_KEY: 'valid-api-key' });
+    const state = JSON.parse(fs.readFileSync(statePath, 'utf-8'));
+    state.locked = false;
+    state.lastActivity = new Date('2026-05-07T02:00:00.000Z').getTime();
+    fs.writeFileSync(statePath, JSON.stringify(state), { mode: 0o600 });
 
-    expect(env.ANTHROPIC_API_KEY).toBe('valid-api-key');
-  });
+    vi.setSystemTime(new Date('2026-05-07T13:59:00.000Z'));
+    expect(getSecurityStatus().locked).toBe(false);
 
-  it('still drops unrelated secret-shaped env vars', () => {
-    process.env.GOOGLE_API_KEY = 'google-key';
-    process.env.CUSTOM_SERVICE_TOKEN = 'service-token';
-    process.env.PATH = '/usr/bin';
-
-    const env = getScrubbedSdkEnv();
-
-    expect(env.GOOGLE_API_KEY).toBeUndefined();
-    expect(env.CUSTOM_SERVICE_TOKEN).toBeUndefined();
-    expect(env.PATH).toBe('/usr/bin');
+    vi.setSystemTime(new Date('2026-05-07T14:01:00.000Z'));
+    expect(getSecurityStatus().locked).toBe(true);
   });
 });

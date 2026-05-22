@@ -1,4 +1,4 @@
-# RFC: Agent Provider Engine
+# RFC: SDK Engine — Direct API Backend for HansCorp
 
 ## Status
 
@@ -10,10 +10,10 @@ ClaudeClaw now routes provider invocation through `src/agent-engine/`: one turn 
 normalized events out. The shipped engine seam localizes the current Claude Agent SDK
 path and all ACP provider paths behind adapters:
 
-- `ClaudeSdkEngineAdapter` wraps `@anthropic-ai/claude-agent-sdk`.
-- `AcpEngineAdapter` wraps OpenCode, Gemini CLI, Codex via `codex-acp`, and custom ACP commands.
-- `EngineFactory` selects the adapter from `ProviderConfig`.
-- `runAgent()` and `runAgentWithRetry()` remain compatibility wrappers over the engine.
+The current architecture spawns a `claude` CLI process per query through
+`@anthropic-ai/claude-agent-sdk`. The SDK Engine would call the Anthropic API in-process,
+giving HansCorp direct control over the agentic loop, tool execution, token accounting,
+and streaming — at the cost of re-implementing some of the CLI's built-in capabilities.
 
 The first implementation does **not** replace Claude Code's subprocess model. It creates
 the provider seam needed to add a future direct `@anthropic-ai/sdk` backend without
@@ -125,10 +125,10 @@ cumulative across multi-step tool-use turns. The `lastCallInputTokens` /
 `lastCallCacheRead` tracking in `agent.ts` is a workaround. With direct API access,
 each `messages.create()` call returns exact usage — no heuristics needed.
 
-### 3. Tighter integration with ClaudeClaw internals
+### 3. Tighter integration with HansCorp internals
 
 The CLI subprocess runs in its own process with its own environment. Passing secrets
-requires `env` injection (`sdkEnv` in `agent.ts:117-123`). Reading ClaudeClaw's SQLite
+requires `env` injection (`sdkEnv` in `agent.ts:117-123`). Reading HansCorp's SQLite
 database from within a tool requires the subprocess to know the DB path. With an
 in-process engine, tools can directly call `db.ts` functions.
 
@@ -142,7 +142,7 @@ enabling unit tests for the tool execution loop, context management, and error h
 
 Direct API access enables features that are hard or impossible with the CLI wrapper:
 - **Streaming to Telegram**: send partial responses as Claude generates them
-- **Custom tool schemas**: define ClaudeClaw-specific tools (e.g., `MemorySearch`,
+- **Custom tool schemas**: define HansCorp-specific tools (e.g., `MemorySearch`,
   `SendTelegram`) without MCP overhead
 - **Multi-model routing**: use Haiku for simple queries, Opus for complex ones,
   decided at runtime per-turn rather than per-session
@@ -193,23 +193,21 @@ Normalized AgentEngineEvent stream:
 
 ### Key observations
 
-1. **Provider session management is opaque**: Claude Code and ACP providers manage
-   their own session state. ClaudeClaw stores the provider session id string in
-   SQLite and prefixes it with the provider type before persistence so switching
-   providers starts/resumes the correct provider namespace.
+1. **Session management is opaque**: The CLI manages session files internally.
+   HansCorp only stores the `session_id` string in SQLite (`sessions` table)
+   and passes it back via `resume`.
 
-2. **Tool execution remains provider-owned**: ClaudeClaw receives normalized
-   progress events but does not execute provider tools itself. Claude Code and
-   ACP providers own their tool loops, permissions, and low-level event formats.
+2. **Tool execution is invisible**: HansCorp sees `tool_progress` events with
+   tool names but never the tool inputs/outputs. The CLI handles the full
+   tool-use loop (tool_use block → execute → tool_result → next API call).
 
 3. **Auth is delegated**: Claude Code reads OAuth from `~/.claude/` or uses
    explicit Claude credentials. ACP providers read their own auth/config files.
    ClaudeClaw does not store OpenCode, Gemini, Codex, or custom ACP API keys.
 
-4. **System prompt loading varies by provider**: Claude Code loads CLAUDE.md,
-   skills, and MCP settings through the Agent SDK `settingSources` path. ACP
-   providers receive cwd, MCP settings, model, thinking, and session config through
-   ACP where supported.
+4. **System prompt is implicit**: CLAUDE.md is loaded by the CLI from `cwd`.
+   HansCorp's `agentSystemPrompt` is prepended to the user message, not
+   passed as a system prompt parameter.
 
 ---
 
@@ -555,7 +553,7 @@ export const TOOL_SCHEMAS: Anthropic.Tool[] = [
 
 ### Session Management
 
-The CLI engine manages sessions opaquely — ClaudeClaw only stores the session ID.
+The CLI engine manages sessions opaquely — HansCorp only stores the session ID.
 The SdkEngine must manage conversation history explicitly.
 
 ```typescript
@@ -725,7 +723,7 @@ export const SDK_MAX_TOOL_LOOPS = parseInt(
 | 3 | **Per-call cost visibility** | Exact token counts from each `messages.create()` |
 | 4 | **Testable** | Mock `@anthropic-ai/sdk` in unit tests; test tool loop in isolation |
 | 5 | **No CLI binary dependency** | Deploy without `claude` installed; lighter Docker images |
-| 6 | **In-process tool access** | Tools can call `db.ts` functions directly, read ClaudeClaw state |
+| 6 | **In-process tool access** | Tools can call `db.ts` functions directly, read HansCorp state |
 
 ### Disadvantages
 
@@ -748,7 +746,7 @@ opt-in via `ENGINE=sdk`. Users who don't set this config see zero behavior chang
 **Medium risk**: Tool execution security. The CLI has built-in sandboxing that we bypass
 with `permissionMode: 'bypassPermissions'`. The SdkEngine runs tools with the same
 privilege level (same user, same filesystem), but without the CLI's safety checks.
-Since ClaudeClaw is a personal bot on a trusted machine with `ALLOWED_CHAT_ID` filtering,
+Since HansCorp is a personal bot on a trusted machine with `ALLOWED_CHAT_ID` filtering,
 this is acceptable. Document the security model clearly.
 
 ---
@@ -866,16 +864,16 @@ and dynamic tool registration. The CLI handles all of this. Adding MCP to SdkEng
 would add ~300-500 lines and significant complexity. Users who need MCP (e.g., Google
 Workspace, filesystem tools) should use `ENGINE=cli`.
 
-Future option: support a subset — e.g., MCP servers defined in a ClaudeClaw config file
+Future option: support a subset — e.g., MCP servers defined in a HansCorp config file
 (not the CLI's settings), started on-demand with a simple lifecycle.
 
 ### 2. How to handle tool sandboxing?
 
 **Current lean: Same trust model as CLI with `bypassPermissions`.**
 
-ClaudeClaw already disables the CLI's permission system (`permissionMode: 'bypassPermissions'`).
+HansCorp already disables the CLI's permission system (`permissionMode: 'bypassPermissions'`).
 The SdkEngine would run tools with the same user privileges. Bash commands run as the
-ClaudeClaw process user. File operations have full filesystem access.
+HansCorp process user. File operations have full filesystem access.
 
 For safety, the SdkEngine should:
 - Enforce `cwd` for relative path resolution
@@ -946,7 +944,7 @@ existing workflows. The dual-engine approach lets users choose based on their ne
 
 ### 2. HTTP proxy — run CLI as a persistent HTTP server
 
-Run the `claude` CLI in server mode, call it via HTTP from ClaudeClaw.
+Run the `claude` CLI in server mode, call it via HTTP from HansCorp.
 
 **Rejected.** The `claude` CLI doesn't have a server mode. We'd need to build a
 wrapper that keeps a `claude` process alive and proxies requests — adding complexity
@@ -999,7 +997,7 @@ For reference, approximate costs at Anthropic API rates (as of early 2026):
 | claude-sonnet-4-5 | $3.00 | $15.00 | $0.30 |
 | claude-haiku-4-5 | $0.80 | $4.00 | $0.08 |
 
-A typical ClaudeClaw turn with Opus (200k context, 2k output) costs ~$3.15.
+A typical HansCorp turn with Opus (200k context, 2k output) costs ~$3.15.
 With prompt caching (180k cached + 20k new), it drops to ~$0.57.
 
 The SdkEngine's explicit prompt construction enables aggressive caching: the system

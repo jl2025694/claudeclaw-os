@@ -19,6 +19,7 @@ vi.mock('./db.js', () => ({
 }));
 
 vi.mock('./memory-ingest.js', () => ({
+  extractViaClaude: vi.fn(() => Promise.resolve('[]')),
   ingestConversationTurn: vi.fn(() => Promise.resolve(false)),
 }));
 

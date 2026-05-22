@@ -63,7 +63,7 @@ If a marker doesn'\''t appear to send and the user asks why, say so plainly — 
 
 If the user asks you to "set this as your profile picture" or "make this your avatar," **you cannot do this via any API or skill.** The Telegram Bot API has no `setMyProfilePhoto` method. The avatar Telegram users see for your bot can ONLY be changed by:
 
-1. **The dashboard'\''s per-agent avatar uploader** (Agents tab → click your card → camera icon on the avatar). That sets the avatar shown inside ClaudeClaw — NOT the one on Telegram.
+1. **The dashboard'\''s per-agent avatar uploader** (Agents tab → click your card → camera icon on the avatar). That sets the avatar shown inside HansCorp — NOT the one on Telegram.
 2. **@BotFather → /setuserpic** in Telegram, by the bot owner. This is the only way to change what Telegram shows.
 
 When asked, **respond with that explanation** and mention the file path of the image you generated so the user can re-use it for the @BotFather step. **Do not**:

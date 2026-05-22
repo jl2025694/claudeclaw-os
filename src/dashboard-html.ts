@@ -5,7 +5,7 @@ const WARROOM_ENABLED = warroomEnabled;
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>ClaudeClaw Mission Control</title>
+<title>HansCorp Mission Control</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
@@ -83,6 +83,28 @@ const WARROOM_ENABLED = warroomEnabled;
   .salience-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; flex-shrink: 0; }
   .clickable-card { cursor: pointer; transition: border-color 0.15s; }
   .clickable-card:hover, .clickable-card:active { border-color: #444; }
+  .agent-id-tooltip { position: relative; }
+  .agent-id-tooltip::after {
+    content: attr(data-agent-id-tooltip);
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 8px);
+    transform: translateX(-50%) translateY(4px);
+    z-index: 40;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.28);
+    background: #050505;
+    color: #ffffff;
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 90ms ease, transform 90ms ease;
+  }
+  .agent-id-tooltip:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
   /* Info tooltips */
   .info-tip { position: relative; display: inline-block; vertical-align: middle; margin-left: 6px; }
   .info-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: #333; color: #888; font-size: 11px; cursor: pointer; user-select: none; line-height: 1; transition: background 0.15s, color 0.15s; }
@@ -157,7 +179,7 @@ const WARROOM_ENABLED = warroomEnabled;
 <!-- Top bar -->
 <div class="flex items-center justify-between mb-1">
   <div class="flex items-center gap-3">
-    <h1 class="text-xl font-bold text-white">ClaudeClaw <span style="font-size:13px;font-weight:400;color:#6b7280">Mission Control</span></h1>
+    <h1 class="text-xl font-bold text-white">HansCorp <span style="font-size:13px;font-weight:400;color:#6b7280">Mission Control</span></h1>
     <span id="device-badge" class="device-badge"></span>
   </div>
   <div class="flex items-center gap-3">
@@ -224,7 +246,7 @@ ${WARROOM_ENABLED ? `<div class="card" style="border:1px solid #1e3a5f">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
     <div>
       <div style="font-size:14px;font-weight:600;color:#a5b4fc">War Room Voices</div>
-      <div style="font-size:11px;color:#6b7280;margin-top:2px">Per-agent Gemini Live voice config. The primary agent defaults to Charon.</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:2px">Per-agent Gemini Live voice config. Ivonne keeps Charon unless you change it.</div>
     </div>
     <div style="display:flex;gap:8px">
       <button id="voicesSaveBtn" onclick="saveVoices()" disabled style="background:#374151;color:#9ca3af;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:not-allowed">Save</button>
@@ -255,7 +277,7 @@ ${WARROOM_ENABLED ? `<div class="card" style="border:1px solid #1e3a5f">
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <select id="meet-agent-select" style="background:#0a0a0a;color:#fff;border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;font-size:12px;min-width:110px">
-        <option value="main">Loading...</option>
+        <option value="main">Ivonne</option>
       </select>
       <input type="text" id="meet-url-input" placeholder="Paste Meet URL, or leave empty to auto-read clipboard"
         style="flex:1;min-width:220px;background:#0a0a0a;color:#fff;border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;font-size:12px;font-family:ui-monospace,monospace">
@@ -276,7 +298,7 @@ ${WARROOM_ENABLED ? `<div class="card" style="border:1px solid #1e3a5f">
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <select id="meet-daily-agent-select" style="background:#0a0a0a;color:#fff;border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;font-size:12px;min-width:110px">
-        <option value="main">Loading...</option>
+        <option value="main">Ivonne</option>
       </select>
       <select id="meet-daily-mode-select" style="background:#0a0a0a;color:#fff;border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;font-size:12px;min-width:100px">
         <option value="direct">Direct</option>
@@ -854,7 +876,11 @@ async function taskAction(id, action) {
 
 async function loadTasks() {
   try {
-    const data = await api('/api/tasks');
+    const [data, agentData] = await Promise.all([
+      api('/api/tasks'),
+      api('/api/agents').catch(function() { return { agents: [] }; }),
+    ]);
+    rememberAgentNames(agentData.agents || []);
     const c = document.getElementById('tasks-container');
     if (!data.tasks || data.tasks.length === 0) {
       c.innerHTML = '<div class="card text-gray-500 text-sm">No scheduled tasks</div>';
@@ -862,7 +888,7 @@ async function loadTasks() {
     }
     c.innerHTML = data.tasks.map(t => {
       const statusCls = t.status === 'running' ? 'pill-running' : t.status === 'active' ? 'pill-active' : 'pill-paused';
-      const agentBadge = t.agent_id && t.agent_id !== 'main' ? '<span class="text-xs text-gray-500 ml-2">[' + resolveAgentName(t.agent_id) + ']</span>' : '';
+      const agentBadge = t.agent_id && t.agent_id !== 'main' ? '<span class="text-xs text-gray-500 ml-2">[' + escapeHtml(agentLabel(t.agent_id)) + ']</span>' : '';
       const lastStatusIcon = t.last_status === 'success' ? '<span class="last-success" title="Last run succeeded">&#10003;</span> ' : t.last_status === 'failed' ? '<span class="last-failed" title="Last run failed">&#10007;</span> ' : t.last_status === 'timeout' ? '<span class="last-timeout" title="Last run timed out">&#9200;</span> ' : '';
       const lastResult = t.last_result ? '<details class="mt-2"><summary class="text-xs text-gray-500">' + lastStatusIcon + 'Last result</summary><pre class="text-xs text-gray-400 mt-1 whitespace-pre-wrap break-words">' + escapeHtml(t.last_result) + '</pre></details>' : '';
       const runningInfo = t.status === 'running' && t.started_at ? '<span class="text-xs text-blue-400 ml-2">running for ' + elapsed(t.started_at) + '</span>' : '';
@@ -1234,19 +1260,18 @@ async function loadMeetAgentOptions() {
   if (!selAvatar && !selDaily) return;
   try {
     const data = await api('/api/agents');
+    rememberAgentNames(data.agents || []);
     const ids = new Set(['main']);
     if (data && Array.isArray(data.agents)) {
       for (const a of data.agents) if (a && a.id) ids.add(a.id);
     }
     const sorted = ['main', ...[...ids].filter(function(x){ return x !== 'main'; }).sort()];
     const optionsHtml = sorted.map(function(id) {
-      const a = data.agents && data.agents.find(function(ag) { return ag.id === id; });
-      const label = (a && a.name) || resolveAgentName(id);
-      return '<option value="' + id + '">' + escapeHtml(label) + '</option>';
+      return '<option value="' + id + '">' + escapeHtml(agentLabel(id)) + '</option>';
     }).join('');
     if (selAvatar) selAvatar.innerHTML = optionsHtml;
     if (selDaily) selDaily.innerHTML = optionsHtml;
-  } catch (e) { /* keep the loading placeholder */ }
+  } catch (e) { /* keep the default "Ivonne" only option */ }
 }
 
 async function sendAgentToMeet() {
@@ -1468,8 +1493,7 @@ async function refreshMeetSessions() {
       meta.style.cssText = 'min-width:0;flex:1';
       const title = document.createElement('div');
       title.style.cssText = 'font-size:12px;color:#fff;font-weight:600';
-      const agentLabel = resolveAgentName(s.agent_id || 'main');
-      title.textContent = agentLabel + ' · ' + (s.status === 'live' ? 'live' : s.status);
+      title.textContent = agentLabel(s.agent_id || '') + ' · ' + (s.status === 'live' ? 'live' : s.status);
       const sub = document.createElement('div');
       sub.style.cssText = 'font-size:10px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
       const urlShort = (s.meet_url || '').replace(MEET_URL_PREFIX, '');
@@ -1497,10 +1521,22 @@ setInterval(refreshMeetSessions, 5000);
 
 // ── Agent & Hive Mind ────────────────────────────────────────────────
 const AGENT_COLORS = { main: '#4f46e5', comms: '#0ea5e9', content: '#f59e0b', ops: '#10b981', research: '#8b5cf6' };
+const AGENT_NAMES = { main: 'Ivonne', comms: 'Charlie', content: 'Jennifer', ops: 'Taylor', research: 'Laura', llina_agent: 'Lina', Camila_Agent: 'Camila', Rodrigo_Agent: 'Rodrigo', Jann_Agent: 'Jann', carlos_agent: 'Carlos' };
+function rememberAgentNames(agents) {
+  if (!Array.isArray(agents)) return;
+  agents.forEach(function(a) {
+    if (a && a.id && a.name) AGENT_NAMES[a.id] = a.name;
+  });
+}
+function agentLabel(agentId) {
+  const label = AGENT_NAMES[agentId] || agentId || '';
+  return String(label).replace(/\s+-\s+[a-z0-9_-]+$/i, '');
+}
 
 async function loadAgents() {
   try {
     const data = await api('/api/agents');
+    rememberAgentNames(data.agents || []);
     const section = document.getElementById('agents-section');
     const container = document.getElementById('agents-container');
     // Always show agents section so "+ New Agent" button is accessible
@@ -1542,7 +1578,7 @@ async function loadAgents() {
       const avatarImg = '<img src="' + avatarUrl + '" alt="" ' +
         'style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid ' + color + ';flex-shrink:0;background:#0a0a0a" ' +
         'onerror="this.remove()">';
-      return '<div class="card clickable-card" style="min-width:150px;flex:1;max-width:220px;border-left:3px solid ' + color + '" data-agent="' + a.id + '" onclick="toggleAgentDetail(this.dataset.agent)">' +
+      return '<div class="card clickable-card agent-id-tooltip" style="min-width:150px;flex:1;max-width:220px;border-left:3px solid ' + color + '" data-agent="' + a.id + '" data-agent-id-tooltip="Agent ID: ' + escapeHtml(a.id) + '" title="Agent ID: ' + escapeHtml(a.id) + '" onclick="toggleAgentDetail(this.dataset.agent)">' +
         '<div style="display:flex;gap:10px;align-items:flex-start">' +
           avatarImg +
           '<div style="flex:1;min-width:0">' +
@@ -1936,8 +1972,8 @@ function cawGoStep2() {
 
   // Set suggested bot names
   var label = id.replace(/[-_]/g, ' ').replace(/\\b\\w/g, function(c) { return c.toUpperCase(); });
-  document.getElementById('caw-suggested-name').textContent = 'ClaudeClaw ' + label;
-  document.getElementById('caw-suggested-username').textContent = 'claudeclaw_' + id.replace(/-/g, '_') + '_bot';
+  document.getElementById('caw-suggested-name').textContent = 'HansCorp ' + label;
+  document.getElementById('caw-suggested-username').textContent = 'hanscorp_' + id.replace(/-/g, '_') + '_bot';
 
   // Reset token state
   cawTokenValid = false;
@@ -2034,7 +2070,7 @@ async function cawCreate() {
     cawCreatedId = data.agentId;
 
     // Build summary
-    var summary = '<div style="margin-bottom:6px"><span style="color:#6b7280">Agent ID:</span> <span class="text-white">' + escapeHtml(data.agentId) + '</span></div>' +
+    var summary = '<div style="margin-bottom:6px"><span style="color:#6b7280">Agent:</span> <span class="text-white">' + escapeHtml(document.getElementById('caw-name').value.trim() || agentLabel(data.agentId)) + '</span></div>' +
       '<div style="margin-bottom:6px"><span style="color:#6b7280">Bot:</span> <span style="color:#6ee7b7">@' + escapeHtml(data.botInfo.username) + '</span></div>' +
       '<div style="margin-bottom:6px"><span style="color:#6b7280">Directory:</span> <span style="color:#9ca3af;font-size:11px">' + escapeHtml(data.agentDir) + '</span></div>' +
       '<div><span style="color:#6b7280">Token stored as:</span> <span style="color:#9ca3af">' + escapeHtml(data.envKey) + '</span></div>';
@@ -2099,7 +2135,11 @@ function copyToClipboard(text) {
 
 async function loadHiveMind() {
   try {
-    const data = await api('/api/hive-mind?limit=15');
+    const [data, agentData] = await Promise.all([
+      api('/api/hive-mind?limit=15'),
+      api('/api/agents').catch(function() { return { agents: [] }; }),
+    ]);
+    rememberAgentNames(agentData.agents || []);
     const section = document.getElementById('hive-section');
     const container = document.getElementById('hive-container');
     if (!data.entries || data.entries.length === 0) { section.style.display = 'none'; return; }
@@ -2113,7 +2153,7 @@ async function loadHiveMind() {
       const blurClass = isBlurred ? 'privacy-blur' : '';
       return '<tr>' +
         '<td class="col-time">' + time + '</td>' +
-        '<td class="col-agent" style="color:' + color + '">' + resolveAgentName(e.agent_id) + '</td>' +
+        '<td class="col-agent" style="color:' + color + '">' + escapeHtml(agentLabel(e.agent_id)) + '</td>' +
         '<td class="col-action">' + escapeHtml(e.action) + '</td>' +
         '<td><div class="col-summary ' + blurClass + '" data-section="hive" data-idx="' + i + '" onclick="toggleItemBlur(this)">' + escapeHtml(e.summary) + '</div></td>' +
       '</tr>';
@@ -2285,7 +2325,7 @@ function renderMissionCard(t) {
     cancelled: '<span class="pill" style="background:#374151;color:#9ca3af">cancelled</span>',
   };
   const statusPill = statusMap[t.status] || '<span class="pill">' + t.status + '</span>';
-  const agentBadge = t.status === 'queued' ? '<span class="text-xs" style="color:' + color + '">@' + t.assigned_agent + '</span>' : '';
+  const agentBadge = t.status === 'queued' ? '<span class="text-xs" style="color:' + color + '">' + escapeHtml(agentLabel(t.assigned_agent)) + '</span>' : '';
   const timeAgo = elapsed(t.created_at);
   let durationStr = '';
   if (t.completed_at && t.started_at) {
@@ -2485,7 +2525,12 @@ async function openTaskHistory() {
 }
 
 async function loadHistoryPage() {
-  var data = await api('/api/mission/history?limit=' + HISTORY_PAGE + '&offset=' + historyOffset);
+  var pair = await Promise.all([
+    api('/api/mission/history?limit=' + HISTORY_PAGE + '&offset=' + historyOffset),
+    api('/api/agents').catch(function() { return { agents: [] }; }),
+  ]);
+  var data = pair[0];
+  rememberAgentNames((pair[1] && pair[1].agents) || []);
   historyTotal = data.total;
   document.getElementById('history-count').textContent = historyTotal + ' completed task' + (historyTotal === 1 ? '' : 's');
   var body = document.getElementById('history-body');
@@ -2512,7 +2557,7 @@ async function loadHistoryPage() {
           '<span class="pill ' + statusCls + '" style="' + statusStyle + '">' + t.status + '</span>' +
         '</div>' +
         '<div class="flex items-center gap-2 text-xs text-gray-500">' +
-          '<span style="color:' + color + '">@' + (t.assigned_agent || 'unassigned') + '</span>' +
+          '<span style="color:' + color + '">' + escapeHtml(t.assigned_agent ? agentLabel(t.assigned_agent) : 'Unassigned') + '</span>' +
           '<span>' + date + ' ' + time + '</span>' +
           (dur ? '<span>' + dur + '</span>' : '') +
         '</div>' +
@@ -2599,6 +2644,7 @@ async function loadAgentTabs() {
   try {
     const data = await api('/api/agents');
     chatAgents = data.agents || [];
+    rememberAgentNames(chatAgents);
     const container = document.getElementById('chat-agent-tabs');
     container.innerHTML = '';
     const allTab = document.createElement('button');
@@ -2612,7 +2658,7 @@ async function loadAgentTabs() {
       const dot = document.createElement('span');
       dot.className = 'agent-dot ' + (a.running ? 'live' : 'dead');
       tab.appendChild(dot);
-      tab.appendChild(document.createTextNode(a.name || resolveAgentName(a.id)));
+      tab.appendChild(document.createTextNode(agentLabel(a.id)));
       tab.onclick = function() { switchAgentTab(a.id, this); };
       container.appendChild(tab);
     });

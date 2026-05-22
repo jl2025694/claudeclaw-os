@@ -6,8 +6,7 @@ import { serve } from '@hono/node-server';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { spawnSync } from 'child_process';
-import { AGENT_ID, ALLOWED_CHAT_ID, DASHBOARD_PORT, DASHBOARD_TOKEN, DASHBOARD_URL, ENABLE_ACP, PROJECT_ROOT, STORE_DIR, WHATSAPP_ENABLED, SLACK_USER_TOKEN, CONTEXT_LIMIT, agentDefaultModel, CLAUDECLAW_CONFIG, updateAgentProvider } from './config.js';
+import { AGENT_ID, ALLOWED_CHAT_ID, DASHBOARD_PORT, DASHBOARD_TOKEN, DASHBOARD_URL, DASHBOARD_BIND, PROJECT_ROOT, STORE_DIR, WHATSAPP_ENABLED, SLACK_USER_TOKEN, CONTEXT_LIMIT, agentDefaultModel, CLAUDECLAW_CONFIG } from './config.js';
 import crypto from 'crypto';
 import {
   getAllScheduledTasks,
@@ -70,18 +69,7 @@ import {
 import { computeNextRun } from './scheduler.js';
 import { generateContent, parseJsonResponse } from './gemini.js';
 import { getSecurityStatus } from './security.js';
-import {
-  AGENT_ID_RE,
-  agentExists,
-  listAgentIds,
-  loadAgentConfig,
-  resolveAgentDir,
-  resolveAgentDisplayName,
-  setAgentModel,
-  setAgentProvider,
-  getMainDescription,
-  setMainDescription,
-} from './agent-config.js';
+import { AGENT_ID_RE, agentExists, formatAgentDisplayName, getAgentGroup, listAgentIds, loadAgentConfig, loadAgentGroups, resolveAgentDir, saveAgentGroups, setAgentModel } from './agent-config.js';
 import {
   resolveAgentAvatar,
   avatarEtag,
@@ -548,6 +536,11 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
     if (!raw) return '';
     try { return new URL(raw).hostname; } catch { return ''; }
   })();
+  function requestHost(c: any): string {
+    const raw = c.req.header('host') || '';
+    if (!raw) return '';
+    try { return new URL(`http://${raw}`).hostname; } catch { return raw.split(':')[0] || ''; }
+  }
   app.use('*', async (c, next) => {
     const method = c.req.method;
     if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
@@ -565,6 +558,8 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
         host === 'localhost' ||
         host === '127.0.0.1' ||
         host === '[::1]' ||
+        host === '0.0.0.0' ||
+        (!!host && host === requestHost(c)) ||
         (!!allowedOriginHost && host === allowedOriginHost);
       if (!allowed) {
         logger.warn({ origin, method, path: new URL(c.req.url).pathname }, 'CSRF: rejected cross-origin request');
@@ -850,10 +845,11 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
     const ids = ['main', ...listAgentIds().filter((id) => id !== 'main')];
     const agents = ids.map((id) => {
       try {
+        if (id === 'main') return { id: 'main', name: formatAgentDisplayName('main'), description: 'General ops and triage' };
         const cfg = loadAgentConfig(id);
-        return { id, name: cfg.name || resolveAgentDisplayName(id), description: cfg.description || '' };
+        return { id, name: formatAgentDisplayName(id, cfg.name || id), description: cfg.description || '' };
       } catch {
-        return { id, name: resolveAgentDisplayName(id), description: '' };
+        return { id, name: formatAgentDisplayName(id), description: '' };
       }
     });
     return c.json({ agents });
@@ -1214,7 +1210,7 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
     return { ok: false, error: 'chat_mismatch', status: 403 };
   }
 
-  app.post('/api/warroom/text/send', async (c) => {
+  app.post('/api/warroom/text/msg', async (c) => {
     let body: { meetingId?: string; text?: string; clientMsgId?: string; chatId?: string } = {};
     try { body = await c.req.json(); } catch { /* empty */ }
     const meetingId = (body.meetingId || '').trim();
@@ -2064,7 +2060,7 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
     const chatId = c.req.query('chatId') || '';
     const info = getBotInfo();
     return c.json({
-      botName: info.name || 'ClaudeClaw',
+      botName: info.name || 'HansCorp',
       botUsername: info.username || '',
       pid: process.pid,
       chatId: chatId || null,
@@ -2098,18 +2094,20 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
           : provider.model;
         return {
           id,
-          name: config.name || resolveAgentDisplayName(id),
-          description: id === 'main' ? getMainDescription() : config.description,
-          model,
-          provider,
+          name: formatAgentDisplayName(id, config.name),
+          description: config.description,
+          model: mainOverride ?? config.model ?? 'claude-opus-4-6',
           running,
           todayTurns: stats.todayTurns,
           todayCost: stats.todayCost,
+          group: getAgentGroup(id),
+          // Cache-bust token for <img> URLs across all surfaces. Derived
+          // from filesystem mtime+size of the resolved avatar — changes
+          // the moment a user upload or Telegram fetch lands.
           avatar_etag: avatarEtagForId(id),
         };
       } catch {
-        const fallbackName = resolveAgentDisplayName(id);
-        return { id, name: fallbackName, description: '', model: 'unknown', provider: { type: 'opencode' }, running: false, todayTurns: 0, todayCost: 0, avatar_etag: avatarEtagForId(id) };
+        return { id, name: formatAgentDisplayName(id), description: '', model: 'unknown', running: false, todayTurns: 0, todayCost: 0, avatar_etag: avatarEtagForId(id) };
       }
     });
 
@@ -2148,8 +2146,27 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
         ...agents,
       ];
     }
+    const mainStats = getAgentTokenStats('main');
+    const allAgents = [
+      { id: 'main', name: formatAgentDisplayName('main'), description: 'Primary HansCorp bot', model: getMainModelOverride() ?? 'claude-opus-4-6', running: mainRunning, todayTurns: mainStats.todayTurns, todayCost: mainStats.todayCost, group: getAgentGroup('main'), avatar_etag: avatarEtagForId('main') },
+      ...agents,
+    ];
 
     return c.json({ agents: allAgents });
+  });
+
+  // Update group for a single agent
+  app.patch('/api/agents/:id/group', async (c) => {
+    const agentId = c.req.param('id');
+    const { group } = await c.req.json<{ group: string | null }>();
+    const groups = { ...loadAgentGroups() };
+    if (group === null || group === '') {
+      delete groups[agentId];
+    } else {
+      groups[agentId] = group;
+    }
+    saveAgentGroups(groups);
+    return c.json({ ok: true });
   });
 
   // Agent-specific recent conversation
@@ -2719,7 +2736,7 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
       if (id !== 'main') {
         try { description = loadAgentConfig(id).description || ''; } catch { /* skip */ }
       } else {
-        description = 'Primary ClaudeClaw bot — general triage and routing';
+        description = 'Primary HansCorp bot — general triage and routing';
       }
       const entries = getHiveMindEntries(200, id);
       const allFiltered = entries
@@ -3309,9 +3326,21 @@ export function buildDashboardApp(botApi?: Api<RawApi>): Hono {
   // Send message from dashboard
   app.post('/api/chat/send', async (c) => {
     if (!botApi) return c.json({ error: 'Bot API not available' }, 503);
-    const body = await c.req.json<{ message?: string }>();
+    const body = await c.req.json<{ message?: string; agentId?: string }>();
     const message = body?.message?.trim();
     if (!message) return c.json({ error: 'message required' }, 400);
+
+    const requestedAgent = body?.agentId?.trim();
+    if (requestedAgent && requestedAgent !== 'all' && requestedAgent !== 'main') {
+      const validAgents = listAgentIds();
+      if (!validAgents.includes(requestedAgent)) {
+        return c.json({ error: `Unknown agent: ${requestedAgent}` }, 400);
+      }
+      const title = message.length > 60 ? message.slice(0, 57) + '...' : message;
+      const id = crypto.randomBytes(4).toString('hex');
+      createMissionTask(id, title, message, requestedAgent, 'dashboard', 5);
+      return c.json({ ok: true, queued: true, id, assigned_agent: requestedAgent });
+    }
 
     // Reject if a turn is already in flight. Without this guard, rapid
     // clicks (or a scripted token holder) can stack N agent invocations,
@@ -3371,7 +3400,7 @@ export function startDashboard(botApi?: Api<RawApi>): void {
   // dashboard-token leak away from full mutation access. Operators who
   // want Cloudflare-tunneled or LAN access opt in via DASHBOARD_BIND in
   // .env (e.g. `DASHBOARD_BIND=0.0.0.0`).
-  const bindHost = (process.env.DASHBOARD_BIND || '127.0.0.1').trim() || '127.0.0.1';
+  const bindHost = (DASHBOARD_BIND || '127.0.0.1').trim() || '127.0.0.1';
   if (bindHost !== '127.0.0.1' && bindHost !== 'localhost') {
     logger.warn(
       { bindHost, port: DASHBOARD_PORT },

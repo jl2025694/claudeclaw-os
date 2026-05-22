@@ -20,6 +20,7 @@ import {
   agentSystemPrompt,
   TYPING_REFRESH_MS,
   AGENT_TIMEOUT_MS,
+  MAX_RESUME_CONTEXT_TOKENS,
   STREAM_STRATEGY,
   MODEL_FALLBACK_CHAIN,
   SHOW_COST_FOOTER,
@@ -32,7 +33,7 @@ import {
   MEMORY_NOTIFY,
   PROJECT_ROOT,
 } from './config.js';
-import { clearSession, getRecentConversation, getRecentMemories, getRecentTaskOutputs, getSession, getSessionConversation, logToHiveMind, pinMemory, unpinMemory, setSession, lookupWaChatId, saveWaMessageMap, saveTokenUsage, saveCompactionEvent, getCompactionCount } from './db.js';
+import { clearSession, getRecentConversation, getRecentMemories, getRecentTaskOutputs, getSession, getSessionConversation, getSessionTokenUsage, logToHiveMind, pinMemory, unpinMemory, setSession, lookupWaChatId, saveWaMessageMap, saveTokenUsage, saveCompactionEvent, getCompactionCount } from './db.js';
 import { logger } from './logger.js';
 import { downloadMedia, buildPhotoMessage, buildDocumentMessage, buildVideoMessage } from './media.js';
 import { buildMemoryContext, evaluateMemoryRelevance, saveConversationTurn, shouldNudgeMemory, MEMORY_NUDGE_TEXT } from './memory.js';
@@ -521,7 +522,24 @@ async function handleMessage(ctx: Context, message: string, forceVoiceReply = fa
   }
 
   // Fetch session first: if resuming, the model already has the system prompt in context.
-  const sessionId = getSession(chatIdStr, AGENT_ID);
+  let sessionId = getSession(chatIdStr, AGENT_ID);
+  if (sessionId && MAX_RESUME_CONTEXT_TOKENS > 0) {
+    const sessionUsage = getSessionTokenUsage(sessionId);
+    if ((sessionUsage?.lastContextTokens ?? 0) >= MAX_RESUME_CONTEXT_TOKENS) {
+      logger.warn(
+        {
+          chatId: chatIdStr,
+          agentId: AGENT_ID,
+          sessionId,
+          lastContextTokens: sessionUsage?.lastContextTokens,
+          maxResumeContextTokens: MAX_RESUME_CONTEXT_TOKENS,
+        },
+        'Clearing oversized Claude session before resume',
+      );
+      clearSession(chatIdStr, AGENT_ID);
+      sessionId = undefined;
+    }
+  }
 
   // Build memory context and prepend to message
   const { contextText: memCtx, surfacedMemoryIds, surfacedMemorySummaries } = await buildMemoryContext(chatIdStr, message, AGENT_ID);
@@ -901,7 +919,7 @@ export function createBot(): Bot {
 
   const bot = new Bot(token);
 
-  // Reject group chats. ClaudeClaw only works in private (1-on-1) chats.
+  // Reject group chats. HansCorp only works in private (1-on-1) chats.
   // This prevents message leakage if the bot is added to a group.
   bot.use(async (ctx, next) => {
     if (ctx.chat && ctx.chat.type !== 'private') {
@@ -949,10 +967,10 @@ export function createBot(): Bot {
     .catch((err) => logger.warn({ err }, 'Failed to register bot commands with Telegram'));
 
   // /help — list available commands
-  bot.command('help', (ctx) => {
-    if (!isAuthorised(ctx.chat!.id)) return;
+  bot.command('help', async (ctx) => {
+    if (await replyIfLocked(ctx)) return;
     return ctx.reply(
-      'ClaudeClaw — Commands\n\n' +
+      'HansCorp — Commands\n\n' +
       '/newchat — Start a new Claude session\n' +
       '/respin — Reload recent context\n' +
       '/voice — Toggle voice mode on/off\n' +
@@ -982,12 +1000,12 @@ export function createBot(): Bot {
   });
 
   // /start — simple greeting (auth-gated after setup)
-  bot.command('start', (ctx) => {
-    if (ALLOWED_CHAT_ID && !isAuthorised(ctx.chat!.id)) return;
+  bot.command('start', async (ctx) => {
+    if (ALLOWED_CHAT_ID && await replyIfLocked(ctx)) return;
     if (AGENT_ID !== 'main') {
       return ctx.reply(`${AGENT_ID.charAt(0).toUpperCase() + AGENT_ID.slice(1)} agent online.`);
     }
-    return ctx.reply('ClaudeClaw online. What do you need?');
+    return ctx.reply('HansCorp online. What do you need?');
   });
 
   // /newchat — clear Claude session, start fresh + auto-commit to hive mind
@@ -1216,7 +1234,7 @@ export function createBot(): Bot {
       }).join('\n\n');
 
       await ctx.reply(
-        `📱 <b>WhatsApp</b>\n\n${lines}\n\n<i>Send a number to open • r &lt;num&gt; &lt;text&gt; to reply</i>`,
+        `📱 <b>WhatsApp</b>\n\n${lines}\n\n<i>Send a number to open • r &lt;num&gt; &lt;text&gt; or &lt;num&gt; &lt;text&gt; to reply</i>`,
         { parse_mode: 'HTML' },
       );
     } catch (err) {
@@ -1286,7 +1304,7 @@ export function createBot(): Bot {
 
   // /stop — interrupt the current agent query
   bot.command('stop', async (ctx) => {
-    if (!isAuthorised(ctx.chat!.id)) return;
+    if (await replyIfLocked(ctx)) return;
     const chatIdStr = ctx.chat!.id.toString();
     const aborted = abortActiveQuery(chatIdStr);
     if (aborted) {
@@ -1298,7 +1316,7 @@ export function createBot(): Bot {
 
   // /agents — list available agents for delegation
   bot.command('agents', async (ctx) => {
-    if (!isAuthorised(ctx.chat!.id)) return;
+    if (await replyIfLocked(ctx)) return;
     const agents = getAvailableAgents();
     if (agents.length === 0) {
       await ctx.reply('No agents configured. Add agent configs under agents/ directory.');
@@ -1325,7 +1343,7 @@ export function createBot(): Bot {
 
   // /status — show security status
   bot.command('status', async (ctx) => {
-    if (!isAuthorised(ctx.chat!.id)) return;
+    if (await replyIfLocked(ctx)) return;
     const s = getSecurityStatus();
     const lines = [
       `PIN lock: ${s.pinEnabled ? 'enabled' : 'disabled'}`,
@@ -1392,8 +1410,8 @@ export function createBot(): Bot {
     // ── WhatsApp state machine ──────────────────────────────────────
     const state = waState.get(chatIdStr);
 
-    // "r <num> <text>" — quick reply from list view without opening chat
-    const quickReply = text.match(/^r\s+(\d)\s+(.+)/is);
+    // "r <num> <text>" or "<num> <text>" — quick reply from list view without opening chat
+    const quickReply = text.match(/^(?:r\s+)?(\d)\s+(.+)/is);
     if (quickReply && state?.mode === 'list') {
       const idx = parseInt(quickReply[1]) - 1;
       const replyText = quickReply[2].trim();
@@ -1545,17 +1563,19 @@ export function createBot(): Bot {
 
   // Voice messages — real transcription via Groq Whisper
   bot.on('message:voice', async (ctx) => {
-    const caps = voiceCapabilities();
-    if (!caps.stt) {
-      await ctx.reply('Voice transcription not configured. Add GROQ_API_KEY to .env');
-      return;
-    }
     const chatId = ctx.chat!.id;
     if (!isAuthorised(chatId)) return;
     if (!ALLOWED_CHAT_ID) {
       await ctx.reply(
-        `Your chat ID is ${chatId}.\n\nAdd this to your .env:\n\nALLOWED_CHAT_ID=${chatId}\n\nThen restart ClaudeClaw OS.`,
+        `Your chat ID is ${chatId}.\n\nAdd this to your .env:\n\nALLOWED_CHAT_ID=${chatId}\n\nThen restart HansCorp.`,
       );
+      return;
+    }
+    if (await replyIfLocked(ctx)) return;
+
+    const caps = voiceCapabilities();
+    if (!caps.stt) {
+      await ctx.reply('Voice transcription not configured. Add GROQ_API_KEY to .env');
       return;
     }
 
@@ -1579,10 +1599,11 @@ export function createBot(): Bot {
     if (!isAuthorised(chatId)) return;
     if (!ALLOWED_CHAT_ID) {
       await ctx.reply(
-        `Your chat ID is ${chatId}.\n\nAdd this to your .env:\n\nALLOWED_CHAT_ID=${chatId}\n\nThen restart ClaudeClaw OS.`,
+        `Your chat ID is ${chatId}.\n\nAdd this to your .env:\n\nALLOWED_CHAT_ID=${chatId}\n\nThen restart HansCorp.`,
       );
       return;
     }
+    if (await replyIfLocked(ctx)) return;
 
     try {
       const photo = ctx.message.photo[ctx.message.photo.length - 1];
@@ -1602,10 +1623,11 @@ export function createBot(): Bot {
     if (!isAuthorised(chatId)) return;
     if (!ALLOWED_CHAT_ID) {
       await ctx.reply(
-        `Your chat ID is ${chatId}.\n\nAdd this to your .env:\n\nALLOWED_CHAT_ID=${chatId}\n\nThen restart ClaudeClaw OS.`,
+        `Your chat ID is ${chatId}.\n\nAdd this to your .env:\n\nALLOWED_CHAT_ID=${chatId}\n\nThen restart HansCorp.`,
       );
       return;
     }
+    if (await replyIfLocked(ctx)) return;
 
     try {
       const doc = ctx.message.document;
@@ -1625,9 +1647,10 @@ export function createBot(): Bot {
     const chatId = ctx.chat!.id;
     if (!isAuthorised(chatId)) return;
     if (!ALLOWED_CHAT_ID) {
-      await ctx.reply(`Your chat ID is ${chatId}.\n\nAdd this to your .env:\n\nALLOWED_CHAT_ID=${chatId}\n\nThen restart ClaudeClaw OS.`);
+      await ctx.reply(`Your chat ID is ${chatId}.\n\nAdd this to your .env:\n\nALLOWED_CHAT_ID=${chatId}\n\nThen restart HansCorp.`);
       return;
     }
+    if (await replyIfLocked(ctx)) return;
 
     try {
       const video = ctx.message.video;
@@ -1647,9 +1670,10 @@ export function createBot(): Bot {
     const chatId = ctx.chat!.id;
     if (!isAuthorised(chatId)) return;
     if (!ALLOWED_CHAT_ID) {
-      await ctx.reply(`Your chat ID is ${chatId}.\n\nAdd this to your .env:\n\nALLOWED_CHAT_ID=${chatId}\n\nThen restart ClaudeClaw OS.`);
+      await ctx.reply(`Your chat ID is ${chatId}.\n\nAdd this to your .env:\n\nALLOWED_CHAT_ID=${chatId}\n\nThen restart HansCorp.`);
       return;
     }
+    if (await replyIfLocked(ctx)) return;
 
     try {
       const videoNote = ctx.message.video_note;

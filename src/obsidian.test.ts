@@ -61,6 +61,31 @@ describe('obsidian', () => {
     expect(result).toContain('FolderB/');
   });
 
+  it('scans markdown files in nested folders', () => {
+    writeNote('Projects/Nested', 'Deep Note.md', 'Nested context about Paperclip routing.');
+    const result = buildObsidianContext({ vault: tmpDir, folders: ['Projects'] }, 'paperclip routing');
+    expect(result).toContain('Projects/Nested/Deep Note');
+  });
+
+  it('includes relevant note snippets when query matches note content', () => {
+    writeNote('Research', 'n8n.md', '# N8N\nUse webhook nodes for WhatsApp routing.');
+    const result = buildObsidianContext({ vault: tmpDir, folders: ['Research'] }, 'como conecto whatsapp con n8n');
+    expect(result).toContain('Relevant notes:');
+    expect(result).toContain('Research/n8n');
+    expect(result).toContain('webhook nodes');
+  });
+
+  it('keeps cache separate per folder configuration', () => {
+    writeNote('FolderA', 'a.md', '- [ ] Task A');
+    writeNote('FolderB', 'b.md', '- [ ] Task B');
+    const first = buildObsidianContext({ vault: tmpDir, folders: ['FolderA'] });
+    const second = buildObsidianContext({ vault: tmpDir, folders: ['FolderB'] });
+    expect(first).toContain('Task A');
+    expect(first).not.toContain('Task B');
+    expect(second).toContain('Task B');
+    expect(second).not.toContain('Task A');
+  });
+
   it('uses cache on second call', () => {
     writeNote('Projects', 'x.md', '- [ ] First task');
     const first = buildObsidianContext({ vault: tmpDir, folders: ['Projects'] });

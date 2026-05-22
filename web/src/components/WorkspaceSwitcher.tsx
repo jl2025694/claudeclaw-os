@@ -5,6 +5,35 @@ import { workspaceName } from '@/lib/personalization';
 
 const THEME_ORDER: ThemeName[] = ['graphite', 'midnight', 'crimson'];
 
+function HansCorpLogo() {
+  return (
+    <div
+      class="w-6 h-6 rounded-md shrink-0 grid place-items-center overflow-hidden"
+      style={{
+        background: 'linear-gradient(135deg, #111827 0%, #1f2937 58%, #0f766e 100%)',
+        border: '1px solid color-mix(in srgb, var(--color-border) 70%, white 30%)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.16)',
+      }}
+      aria-hidden="true"
+    >
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path
+          d="M4.4 3.5v11M13.6 3.5v11M5.2 9h7.6"
+          stroke="white"
+          stroke-width="2"
+          stroke-linecap="round"
+        />
+        <path
+          d="M7.15 4.4h3.7M7.15 13.6h3.7"
+          stroke="#5eead4"
+          stroke-width="1.35"
+          stroke-linecap="round"
+        />
+      </svg>
+    </div>
+  );
+}
+
 export function WorkspaceSwitcher() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -25,7 +54,6 @@ export function WorkspaceSwitcher() {
     };
   }, [open]);
 
-  const current = themeMeta[theme.value];
   const name = workspaceName.value;
 
   return (
@@ -35,13 +63,7 @@ export function WorkspaceSwitcher() {
         onClick={() => setOpen((v) => !v)}
         class="w-full flex items-center gap-2 px-2 py-2 rounded-md hover:bg-[var(--color-elevated)] transition-colors"
       >
-        <div
-          class="w-6 h-6 rounded shrink-0"
-          style={{
-            background: `linear-gradient(135deg, ${current.swatch} 0%, var(--color-elevated) 100%)`,
-            border: '1px solid var(--color-border)',
-          }}
-        />
+        <HansCorpLogo />
         <span class="text-[14px] font-semibold text-[var(--color-text)] truncate">{name}</span>
         <ChevronDown size={15} class="ml-auto text-[var(--color-text-faint)]" />
       </button>
